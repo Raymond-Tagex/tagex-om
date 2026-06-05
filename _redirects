@@ -1,0 +1,3 @@
+# TAGEX O&M Ticket System — Netlify redirects
+# All routes serve index.html (SPA behaviour)
+/*    /index.html   200

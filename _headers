@@ -1,0 +1,14 @@
+# TAGEX O&M Ticket System — Netlify custom headers
+
+/*
+  Access-Control-Allow-Origin: *
+  Access-Control-Allow-Methods: GET, POST, PATCH, DELETE, OPTIONS
+  Access-Control-Allow-Headers: Authorization, Content-Type
+  Cache-Control: no-cache, no-store, must-revalidate
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: SAMEORIGIN
+
+/*.html
+  Cache-Control: no-cache, no-store, must-revalidate
+  Pragma: no-cache
+  Expires: 0

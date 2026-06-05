@@ -1,0 +1,2042 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#0e0f11">
+<title>TAGEX — O&M Ticket System</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0e0f11;--surface:#16181c;--card:#1c1f25;--border:#2a2e38;--border-hi:#3d4354;
+  --amber:#f0a500;--amber-dim:rgba(240,165,0,.12);--amber-glow:rgba(240,165,0,.22);
+  --green:#22c55e;--green-dim:rgba(34,197,94,.12);--green-b:rgba(34,197,94,.3);
+  --red:#ef4444;--red-dim:rgba(239,68,68,.12);--red-b:rgba(239,68,68,.3);
+  --blue:#3b82f6;--blue-dim:rgba(59,130,246,.12);
+  --orange:#f97316;--orange-dim:rgba(249,115,22,.12);
+  --purple:#a855f7;--purple-dim:rgba(168,85,247,.12);
+  --text:#e8eaf0;--text-2:#8b92a8;--text-3:#464e62;
+  --mono:'IBM Plex Mono',monospace;--sans:'IBM Plex Sans',sans-serif;
+  --r:10px;--rs:6px;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+html,body{height:100%;overflow:hidden;}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14px;-webkit-font-smoothing:antialiased;}
+.app{display:flex;flex-direction:column;height:100vh;}
+.topnav{background:var(--surface);border-bottom:1px solid var(--border);padding:0 16px;height:54px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;z-index:200;}
+.brand{display:flex;align-items:center;gap:10px;}
+.brand-logo{width:30px;height:30px;border:1.5px solid var(--amber);border-radius:5px;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:10px;font-weight:600;color:var(--amber);}
+.brand-name{font-family:var(--mono);font-size:13px;font-weight:600;color:var(--text);}
+.brand-sub{font-family:var(--mono);font-size:10px;color:var(--text-2);}
+.nav-right{display:flex;gap:8px;align-items:center;}
+.sync-dot{width:7px;height:7px;border-radius:50%;background:var(--text-3);}
+.sync-dot.live{background:var(--green);animation:pulse 2s infinite;}
+.sync-dot.err{background:var(--red);}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.pat-btn{font-family:var(--mono);font-size:10px;padding:4px 8px;border:1px solid var(--border);border-radius:4px;background:transparent;color:var(--text-3);cursor:pointer;}
+.pat-btn.ok{border-color:var(--amber);color:var(--amber);}
+.views{flex:1;overflow:hidden;position:relative;}
+.view{position:absolute;inset:0;overflow-y:auto;display:none;-webkit-overflow-scrolling:touch;}
+.view.active{display:block;}
+.view-pad{padding:14px 14px 90px;}
+.bottomnav{background:var(--surface);border-top:1px solid var(--border);display:flex;flex-shrink:0;z-index:200;}
+.bnav-btn{flex:1;padding:10px 4px 8px;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;border:none;background:transparent;color:var(--text-3);font-family:var(--mono);font-size:9px;transition:color .15s;}
+.bnav-btn.on{color:var(--amber);}
+.bnav-btn svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;}
+.bnav-icon{position:relative;display:inline-flex;}
+.badge{position:absolute;top:-4px;right:-6px;background:var(--red);color:#fff;font-size:8px;min-width:14px;height:14px;border-radius:7px;display:flex;align-items:center;justify-content:center;padding:0 3px;font-family:var(--mono);}
+.fab{position:fixed;bottom:72px;right:16px;z-index:300;background:var(--amber);color:#0a0a0b;width:52px;height:52px;border-radius:50%;border:none;cursor:pointer;font-size:22px;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 20px rgba(240,165,0,.4);}
+.fab:active{transform:scale(.95);}
+.sec-label{font-family:var(--mono);font-size:10px;font-weight:600;color:var(--amber);letter-spacing:.14em;text-transform:uppercase;display:flex;align-items:center;gap:8px;margin-bottom:12px;}
+.sec-label::after{content:'';flex:1;height:1px;background:var(--border);}
+.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;}
+.stat-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:14px;}
+.stat-val{font-family:var(--mono);font-size:26px;font-weight:600;line-height:1;margin-bottom:4px;}
+.stat-label{font-family:var(--mono);font-size:10px;color:var(--text-2);letter-spacing:.05em;text-transform:uppercase;}
+.tcard{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:12px 14px;margin-bottom:8px;cursor:pointer;transition:border-color .15s;}
+.tcard:active{border-color:var(--amber);}
+.tcard-ref{font-family:var(--mono);font-size:10px;color:var(--amber);margin-bottom:3px;}
+.tcard-client{font-family:var(--mono);font-size:10px;font-weight:600;color:var(--amber);margin-bottom:3px;letter-spacing:.03em;}
+.tcard-title{font-size:13px;font-weight:500;color:var(--text);line-height:1.35;margin-bottom:7px;}
+.tcard-meta{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:6px;}
+.tcard-foot{display:flex;justify-content:space-between;align-items:center;margin-top:6px;}
+.tcard-site{font-family:var(--mono);font-size:10px;color:var(--text-2);}
+.tcard-date{font-family:var(--mono);font-size:10px;color:var(--text-2);}
+.tcard-tech{display:flex;align-items:center;gap:5px;font-family:var(--mono);font-size:10px;color:var(--text-2);}
+.av{width:18px;height:18px;border-radius:50%;background:var(--amber-dim);border:1px solid var(--amber);display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:600;color:var(--amber);}
+.pri{font-family:var(--mono);font-size:10px;font-weight:600;padding:2px 6px;border-radius:3px;}
+.p-normal{background:var(--blue-dim);color:var(--blue);}
+.p-high{background:var(--amber-dim);color:var(--amber);}
+.p-urgent{background:var(--orange-dim);color:var(--orange);}
+.status-badge{font-family:var(--mono);font-size:10px;font-weight:600;padding:2px 6px;border-radius:3px;}
+.s-new{background:var(--purple-dim);color:var(--purple);}
+.s-open{background:var(--blue-dim);color:var(--blue);}
+.s-inprog{background:var(--amber-dim);color:var(--amber);}
+.s-waiting{background:var(--orange-dim);color:var(--orange);}
+.s-done{background:var(--green-dim);color:var(--green);}
+.s-closed{background:rgba(139,146,168,.12);color:var(--text-2);}
+.s-esc{background:var(--red-dim);color:var(--red);}
+.overdue{font-family:var(--mono);font-size:10px;color:var(--red);}
+.filter-bar{display:flex;gap:6px;margin-bottom:12px;overflow-x:auto;padding-bottom:2px;}
+.filter-bar::-webkit-scrollbar{display:none;}
+.fchip{font-family:var(--mono);font-size:11px;padding:5px 10px;border:1px solid var(--border);border-radius:20px;cursor:pointer;white-space:nowrap;color:var(--text-2);background:transparent;}
+.fchip.on{border-color:var(--amber);color:var(--amber);background:var(--amber-dim);}
+.search-wrap{position:relative;margin-bottom:12px;}
+.search-wrap input{width:100%;background:var(--surface);border:1px solid var(--border);border-radius:var(--rs);color:var(--text);font-family:var(--mono);font-size:13px;padding:10px 12px 10px 34px;outline:none;}
+.search-wrap input:focus{border-color:var(--amber);}
+.si{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--text-3);}
+.detail-hdr{background:var(--surface);border-bottom:1px solid var(--border);padding:14px 16px;display:flex;align-items:center;gap:12px;flex-shrink:0;}
+.back-btn{background:none;border:none;color:var(--text-2);cursor:pointer;font-size:20px;padding:2px;}
+.detail-ref{font-family:var(--mono);font-size:12px;color:var(--amber);letter-spacing:.04em;}
+.detail-title{font-size:14px;font-weight:600;color:var(--text);}
+.d-body{padding:14px 16px 90px;}
+.df{margin-bottom:12px;}
+.df label{display:block;font-family:var(--mono);font-size:10px;color:var(--amber);letter-spacing:.08em;text-transform:uppercase;margin-bottom:4px;opacity:.7;}
+.df-val{font-size:13px;color:var(--text);line-height:1.6;}
+.df-val.mono{font-family:var(--mono);font-size:11px;}
+.divider{height:1px;background:var(--border);margin:14px 0;}
+.tl{padding-left:18px;position:relative;}
+.tl::before{content:'';position:absolute;left:5px;top:0;bottom:0;width:1px;background:var(--border);}
+.tl-item{position:relative;margin-bottom:14px;}
+.tl-dot{position:absolute;left:-16px;top:3px;width:9px;height:9px;border-radius:50%;border:2px solid var(--amber);background:var(--bg);}
+.tl-dot.g{border-color:var(--green);}
+.tl-time{font-family:var(--mono);font-size:10px;color:var(--text-2);}
+.tl-who{color:var(--amber);}
+.tl-text{font-size:13px;color:var(--text);line-height:1.5;margin-top:2px;}
+.form-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:14px;margin-bottom:12px;}
+.card-ttl{font-family:var(--mono);font-size:10px;font-weight:600;color:var(--amber);letter-spacing:.1em;text-transform:uppercase;margin-bottom:12px;}
+.field{margin-bottom:12px;}
+.field:last-child{margin-bottom:0;}
+.field label{display:block;font-family:var(--mono);font-size:10px;color:var(--text-2);letter-spacing:.08em;text-transform:uppercase;margin-bottom:5px;}
+.field input,.field select,.field textarea{width:100%;background:var(--surface);border:1px solid var(--border);border-radius:var(--rs);color:var(--text);font-family:var(--sans);font-size:15px;padding:10px 12px;outline:none;-webkit-appearance:none;}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--amber);}
+.field select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='11' viewBox='0 0 24 24' fill='none' stroke='%238b92a8' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:32px;}
+.field textarea{resize:none;height:80px;line-height:1.5;}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.req{color:var(--red);}
+.pri-sel{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;}
+.pri-opt{padding:8px 4px;border:1px solid var(--border);border-radius:var(--rs);text-align:center;font-family:var(--mono);font-size:10px;font-weight:600;cursor:pointer;}
+.pri-opt.normal{color:var(--blue);}
+.pri-opt.normal.sel{background:var(--blue-dim);border-color:var(--blue);}
+.pri-opt.high{color:var(--amber);}
+.pri-opt.high.sel{background:var(--amber-dim);border-color:var(--amber);}
+.pri-opt.urgent{color:var(--red);}
+.pri-opt.urgent.sel{background:var(--red-dim);border-color:var(--red);}
+.submit-btn{width:100%;background:var(--amber);color:#0a0a0b;font-family:var(--mono);font-size:13px;font-weight:700;padding:15px;border:none;border-radius:var(--r);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;}
+.submit-btn:disabled{opacity:.4;cursor:not-allowed;}
+.btn-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;}
+.btn-out{background:transparent;border:1.5px solid var(--border);color:var(--text-2);font-family:var(--mono);font-size:11px;font-weight:600;padding:10px;border-radius:var(--rs);cursor:pointer;}
+.btn-out:active{border-color:var(--amber);color:var(--amber);}
+.sact-bar{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;margin-bottom:14px;}
+.sact-bar::-webkit-scrollbar{display:none;}
+.sact{font-family:var(--mono);font-size:11px;padding:7px 12px;border:1px solid var(--border);border-radius:20px;cursor:pointer;white-space:nowrap;color:var(--text-2);background:var(--surface);}
+.sact.pri{border-color:var(--amber);color:var(--amber);background:var(--amber-dim);}
+.sact.ok{border-color:var(--green);color:var(--green);background:var(--green-dim);}
+.sact.danger{border-color:var(--red);color:var(--red);background:var(--red-dim);}
+.comment-row{display:flex;gap:8px;margin-top:10px;}
+.comment-row input{flex:1;background:var(--surface);border:1px solid var(--border);border-radius:var(--rs);color:var(--text);font-size:14px;padding:10px 12px;outline:none;}
+.comment-row input:focus{border-color:var(--amber);}
+.comment-send{background:var(--amber);color:#0a0a0b;border:none;border-radius:var(--rs);padding:10px 14px;cursor:pointer;font-family:var(--mono);font-size:12px;font-weight:600;}
+.info-box{background:var(--amber-dim);border:1px solid rgba(240,165,0,.3);border-radius:var(--rs);padding:8px 12px;font-family:var(--mono);font-size:10px;color:var(--amber);margin-bottom:12px;line-height:1.6;}
+.err-box{background:var(--red-dim);border:1px solid var(--red-b);border-radius:var(--rs);padding:8px 12px;font-family:var(--mono);font-size:10px;color:var(--red);margin-bottom:12px;}
+.ok-box{background:var(--green-dim);border:1px solid var(--green-b);border-radius:var(--rs);padding:8px 12px;font-family:var(--mono);font-size:10px;color:var(--green);margin-bottom:12px;}
+.loading-row{display:flex;align-items:center;gap:10px;padding:20px;font-family:var(--mono);font-size:11px;color:var(--text-3);}
+.doc-grid{display:flex;flex-direction:column;gap:8px;margin-top:8px;}
+.doc-item{display:flex;align-items:center;justify-content:space-between;background:var(--surface);border:1px solid var(--border);border-radius:var(--rs);padding:10px 12px;gap:10px;}
+.doc-name{font-family:var(--mono);font-size:11px;color:var(--text);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.doc-size{font-family:var(--mono);font-size:10px;color:var(--text-3);white-space:nowrap;}
+.doc-view{font-family:var(--mono);font-size:10px;padding:4px 10px;border:1px solid var(--amber);border-radius:20px;color:var(--amber);background:transparent;cursor:pointer;white-space:nowrap;text-decoration:none;}
+.doc-upload-area{border:1.5px dashed var(--border);border-radius:var(--rs);padding:20px;text-align:center;font-family:var(--mono);font-size:11px;color:var(--text-2);cursor:pointer;margin-top:8px;transition:border-color .2s;}
+.doc-upload-area:hover{border-color:var(--amber);color:var(--amber);}
+.doc-upload-area.dragover{border-color:var(--amber);background:rgba(255,171,0,.05);}
+.doc-modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:200;display:flex;align-items:flex-end;justify-content:center;}
+.doc-modal{background:var(--bg);border:1px solid var(--border);border-radius:12px 12px 0 0;padding:20px;width:100%;max-width:520px;max-height:90vh;overflow-y:auto;}
+.doc-modal-title{font-family:var(--mono);font-size:12px;font-weight:700;color:var(--amber);letter-spacing:.06em;text-transform:uppercase;margin-bottom:16px;}
+.doc-modal label{display:block;font-family:var(--mono);font-size:10px;color:var(--amber);opacity:.7;letter-spacing:.07em;text-transform:uppercase;margin-bottom:4px;margin-top:12px;}
+.doc-modal input,.doc-modal select{width:100%;background:var(--surface);border:1px solid var(--border);border-radius:var(--rs);color:var(--text);font-family:var(--mono);font-size:12px;padding:8px 10px;outline:none;box-sizing:border-box;}
+.doc-modal select option{background:var(--bg);}
+.doc-modal-file{background:var(--surface);border:1px solid var(--amber);border-radius:var(--rs);padding:8px 10px;font-family:var(--mono);font-size:11px;color:var(--amber);margin-bottom:4px;}
+.doc-modal-btns{display:flex;gap:8px;margin-top:18px;}
+.doc-modal-btns .btn-primary{flex:1;background:var(--amber);color:#000;border:none;font-family:var(--mono);font-size:12px;font-weight:700;padding:11px;border-radius:var(--rs);cursor:pointer;}
+.doc-modal-btns .btn-cancel{background:transparent;border:1px solid var(--border);color:var(--text-2);font-family:var(--mono);font-size:12px;padding:11px 16px;border-radius:var(--rs);cursor:pointer;}
+.spin{display:inline-block;width:14px;height:14px;border:2px solid rgba(240,165,0,.2);border-top:2px solid var(--amber);border-radius:50%;animation:rot .6s linear infinite;}
+@keyframes rot{to{transform:rotate(360deg)}}
+.empty{text-align:center;padding:40px 20px;color:var(--text-3);font-family:var(--mono);font-size:11px;}
+.empty-icon{font-size:32px;margin-bottom:10px;opacity:.4;}
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:500;display:none;align-items:flex-end;}
+.overlay.open{display:flex;}
+.modal{background:var(--card);border-radius:var(--r) var(--r) 0 0;width:100%;padding:20px 16px 40px;max-height:80vh;overflow-y:auto;}
+.modal-handle{width:36px;height:4px;background:var(--border-hi);border-radius:2px;margin:0 auto 16px;}
+.modal-title{font-family:var(--mono);font-size:11px;font-weight:600;color:var(--amber);letter-spacing:.1em;text-transform:uppercase;margin-bottom:14px;}
+.at-status{display:flex;align-items:center;gap:8px;font-family:var(--mono);font-size:10px;color:var(--text-2);background:var(--surface);border:1px solid var(--border);border-radius:var(--rs);padding:7px 10px;margin-bottom:12px;}
+.tabs{display:flex;background:var(--surface);border-radius:var(--rs);padding:3px;gap:2px;margin-bottom:12px;}
+.tab{flex:1;padding:7px;text-align:center;font-family:var(--mono);font-size:11px;font-weight:600;border-radius:5px;cursor:pointer;color:var(--text-3);}
+.tab.on{background:var(--amber);color:#0a0a0b;}
+.client-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:12px 14px;margin-bottom:8px;}
+.client-name{font-size:13px;font-weight:500;color:var(--text);margin-bottom:4px;}
+.client-meta{font-family:var(--mono);font-size:10px;color:var(--text-2);}
+.bucket{margin-bottom:20px;}
+.bucket-hdr{display:flex;align-items:center;gap:8px;margin-bottom:10px;padding:8px 12px;border-radius:var(--rs);font-family:var(--mono);font-size:11px;font-weight:600;}
+.bucket-crit{background:var(--red-dim);border:1px solid var(--red-b);color:var(--red);}
+.bucket-warn{background:var(--amber-dim);border:1px solid rgba(240,165,0,.3);color:var(--amber);}
+.bucket-info{background:var(--blue-dim);border:1px solid rgba(59,130,246,.2);color:var(--blue);}
+.bucket-ok{background:var(--green-dim);border:1px solid var(--green-b);color:var(--green);}
+.triage-empty{text-align:center;padding:12px;font-family:var(--mono);font-size:11px;color:var(--text-3);border:1px dashed var(--border);border-radius:var(--rs);}
+.urgency-pill{display:inline-flex;align-items:center;gap:4px;font-family:var(--mono);font-size:9px;font-weight:700;padding:2px 7px;border-radius:20px;text-transform:uppercase;letter-spacing:.06em;}
+.u-critical{background:var(--red-dim);color:var(--red);border:1px solid var(--red-b);}
+.u-high{background:var(--amber-dim);color:var(--amber);border:1px solid rgba(240,165,0,.3);}
+.u-medium{background:var(--blue-dim);color:var(--blue);}
+.u-normal{background:rgba(139,146,168,.1);color:var(--text-3);}
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- TOP NAV -->
+<div class="topnav">
+  <div class="brand">
+    <div class="brand-logo">TX</div>
+    <div>
+      <div class="brand-name">O&amp;M Tickets</div>
+      <div class="brand-sub">TAGEX Energy · Live O&amp;M Data</div>
+    </div>
+  </div>
+  <div class="nav-right">
+    <div id="syncDot" class="sync-dot" title="Airtable status"></div>
+    <button class="pat-btn" id="refreshBtn" onclick="loadAll()" title="Refresh data from Airtable" style="margin-right:4px;">↻</button>
+    <button class="pat-btn" id="patBtn" onclick="showPatModal()">SET KEY</button>
+  </div>
+</div>
+
+<!-- VIEWS -->
+<div class="views">
+
+  <!-- DASHBOARD -->
+  <div class="view active" id="view-dashboard">
+    <div class="view-pad">
+      <div id="dash-at-status"></div>
+      <div class="sec-label">Live Job Cards</div>
+      <div class="stats-grid" id="dashStats">
+        <div class="stat-card"><div class="stat-val" style="color:var(--amber)" id="s-total">—</div><div class="stat-label">Total JCs</div></div>
+        <div class="stat-card"><div class="stat-val" style="color:var(--purple)" id="s-new">—</div><div class="stat-label">New</div></div>
+        <div class="stat-card"><div class="stat-val" style="color:var(--amber)" id="s-quot">—</div><div class="stat-label">Quot. Pending</div></div>
+        <div class="stat-card"><div class="stat-val" style="color:var(--green)" id="s-coc">—</div><div class="stat-label">COC Pending</div></div>
+        <div class="stat-card"><div class="stat-val" style="color:var(--blue)" id="s-inprog">—</div><div class="stat-label">In Progress</div></div>
+
+      </div>
+      <div class="search-wrap" style="margin-top:4px;">
+        <span class="si">⌕</span>
+        <input type="text" id="dashSearch" placeholder="Search client, title, ref…" oninput="filterDash(this.value)" autocomplete="off" spellcheck="false">
+      </div>
+      <div class="filter-bar" id="dash-filter-bar">
+        <button class="fchip on"  onclick="setDashFilter(this,'ALL')">All</button>
+        <button class="fchip"     onclick="setDashFilter(this,'New')">New</button>
+        <button class="fchip"     onclick="setDashFilter(this,'Active')">Active</button>
+        <button class="fchip"     onclick="setDashFilter(this,'In Progress')">In Progress</button>
+        <button class="fchip"     onclick="setDashFilter(this,'Quotation Pending')">Quot. Pending</button>
+        <button class="fchip"     onclick="setDashFilter(this,'COC Pending')">COC Pending</button>
+        <button class="fchip"     onclick="setDashFilter(this,'Monitoring')">Monitoring</button>
+        <button class="fchip"     onclick="setDashFilter(this,'overdue')">⚠ Overdue</button>
+      </div>
+      <div id="dash-cards"></div>
+      <div class="sec-label" id="dash-recent-lbl">Recently Updated</div>
+      <div id="dash-recent"></div>
+    </div>
+  </div>
+
+  <!-- JOB CARDS LIST -->
+  <div class="view" id="view-tickets">
+    <div class="view-pad">
+      <div class="search-wrap">
+        <span class="si">⌕</span>
+        <input type="text" id="jcSearch" placeholder="Search JC ref, title, site, client…" oninput="filterJCs(this.value)" autocomplete="off" spellcheck="false">
+      </div>
+      <div class="filter-bar" id="jc-status-bar">
+        <button class="fchip on" onclick="setJCFilter(this,'ALL')">All</button>
+        <button class="fchip" onclick="setJCFilter(this,'New')">New</button>
+        <button class="fchip" onclick="setJCFilter(this,'Active')">Active</button>
+        <button class="fchip" onclick="setJCFilter(this,'In Progress')">In Progress</button>
+        <button class="fchip" onclick="setJCFilter(this,'Quotation Pending')">Quot. Pending</button>
+        <button class="fchip" onclick="setJCFilter(this,'COC Pending')">COC Pending</button>
+        <button class="fchip" onclick="setJCFilter(this,'Monitoring')">Monitoring</button>
+      </div>
+      <div class="filter-bar" id="jc-pri-bar">
+        <button class="fchip on" onclick="setJCPriFilter(this,'ALL')">Any Priority</button>
+        <button class="fchip" onclick="setJCPriFilter(this,'Critical')">🔴 Critical</button>
+        <button class="fchip" onclick="setJCPriFilter(this,'High')">🟡 High</button>
+        <button class="fchip" onclick="setJCPriFilter(this,'Medium')">🔵 Medium</button>
+        <button class="fchip" onclick="setJCPriFilter(this,'overdue')">⚠ Overdue</button>
+      </div>
+      <div id="jcList"></div>
+    </div>
+  </div>
+
+  <!-- NEW TICKET -->
+  <div class="view" id="view-new">
+    <div class="view-pad">
+      <div class="info-box">
+        This creates a new ticket entry in the O&amp;M Activity Log and links it to the selected Job Card in Airtable base <strong>app0tq4y9wH10h6Up</strong>.
+      </div>
+
+      <div class="form-card">
+        <div class="card-ttl">Ticket Details</div>
+        <div class="field">
+          <label>Category <span class="req">*</span></label>
+          <select id="f-cat">
+            <option value="">— Select category —</option>
+            <option>Inverter Fault</option>
+            <option>Battery Fault</option>
+            <option>Grid / Eskom Fault</option>
+            <option>Solar Production Issue</option>
+            <option>Communication Failure</option>
+            <option>Monitoring Offline</option>
+            <option>Preventative Maintenance</option>
+            <option>Emergency Callout</option>
+            <option>Warranty Claim</option>
+            <option>General Support</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Subject <span class="req">*</span></label>
+          <input type="text" id="f-subj" placeholder="Brief description of the issue">
+        </div>
+        <div class="field">
+          <label>Description</label>
+          <textarea id="f-desc" placeholder="Detailed notes — what happened, when, error codes, observations…"></textarea>
+        </div>
+      </div>
+
+      <div class="form-card">
+        <div class="card-ttl">Priority</div>
+        <div class="pri-sel">
+          <div class="pri-opt normal" onclick="selPri(this,'Normal')">Normal</div>
+          <div class="pri-opt high sel" onclick="selPri(this,'High')">High</div>
+          <div class="pri-opt urgent" onclick="selPri(this,'Urgent')">Urgent</div>
+        </div>
+      </div>
+
+      <div class="form-card">
+        <div class="card-ttl">Link to Job Card (O&amp;M Airtable)</div>
+        <div class="field">
+          <label>Job Card <span class="req">*</span></label>
+          <select id="f-jc" onchange="onJCSelect(this)">
+            <option value="">— Loading job cards… —</option>
+          </select>
+        </div>
+        <div id="jc-preview" style="display:none;background:var(--surface);border:1px solid var(--border);border-radius:var(--rs);padding:10px;margin-top:-6px;font-family:var(--mono);font-size:11px;color:var(--text-2);line-height:1.8;"></div>
+        <div class="field" style="margin-top:10px;">
+          <label>Reported By</label>
+          <input type="text" id="f-rep" placeholder="Technician / client name">
+        </div>
+        <div class="row2">
+          <div class="field">
+            <label>Asset / Inverter</label>
+            <input type="text" id="f-asset" placeholder="e.g. SolaX X3-30kW">
+          </div>
+          <div class="field">
+            <label>Error Code</label>
+            <input type="text" id="f-err" placeholder="e.g. E-28">
+          </div>
+        </div>
+      </div>
+
+      <div id="newStatus"></div>
+      <button class="submit-btn" id="submitBtn" onclick="submitTicket()">
+        <span id="submitTxt">📤 Submit Ticket to Airtable</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- CLIENTS -->
+  <div class="view" id="view-sites">
+    <div class="view-pad">
+      <div class="tabs">
+        <div class="tab on" onclick="setCliTab(this,'clients')">Clients</div>
+        <div class="tab" onclick="setCliTab(this,'people')">People</div>
+        <div class="tab" onclick="setCliTab(this,'activity')">Activity Log</div>
+      </div>
+      <div id="clientsContent"></div>
+    </div>
+  </div>
+
+  <!-- DETAIL -->
+  <div class="view" id="view-detail">
+    <div class="detail-hdr">
+      <button class="back-btn" onclick="closeDetail()">←</button>
+      <div>
+        <div class="detail-ref" id="d-ref"></div>
+        <div class="detail-title" id="d-title"></div>
+      </div>
+    </div>
+    <div class="d-body" id="d-body"></div>
+  </div>
+
+  <!-- SETTINGS -->
+  <div class="view" id="view-settings">
+    <div class="view-pad">
+      <div class="form-card">
+        <div class="card-ttl">Airtable — O&amp;M Platform</div>
+        <div class="field">
+          <label>Base ID (read-only)</label>
+          <input type="text" value="app0tq4y9wH10h6Up" readonly style="color:var(--amber);font-family:var(--mono);font-size:12px;">
+        </div>
+        <div class="field">
+          <label>Personal Access Token <span class="req">*</span></label>
+          <input type="password" id="s-pat" placeholder="pat_xxxxxxxxxxxxxxxxxxxx" oninput="savePat(this.value)" autocomplete="off">
+        </div>
+        <div id="s-status" style="font-family:var(--mono);font-size:10px;color:var(--text-3);margin-top:6px;"></div>
+        <button class="submit-btn" style="margin-top:10px;" onclick="testAndLoad()">
+          Test Connection &amp; Load Data
+        </button>
+      </div>
+
+      <div class="form-card">
+        <div class="card-ttl">O&amp;M Tables (confirmed)</div>
+        <div style="font-family:var(--mono);font-size:10px;color:var(--text-2);line-height:2;">
+          Job Cards &nbsp;<span style="color:var(--green)">tbl2wqnfM0eDa8M7P ✓</span><br>
+          Activity Log <span style="color:var(--green)">tblWSJlbiGWlZ6yGL ✓</span><br>
+          Clients &nbsp;&nbsp;&nbsp;&nbsp; <span style="color:var(--green)">tblljzSDboKGUJAXg ✓</span><br>
+          People &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:var(--green)">tblYXKBqfN4zituh1 ✓</span><br>
+          Sign-Offs &nbsp; <span style="color:var(--green)">tblAukQbK8WvVj16i ✓</span><br>
+          Costing &nbsp;&nbsp;&nbsp;&nbsp;<span style="color:var(--green)">tblLZ7zJFusjwUkbU ✓</span><br>
+          Documents &nbsp;<span style="color:var(--green)">tbljdfGLoiHlrdzfs ✓</span><br>
+          BOM Sheets &nbsp;<span style="color:var(--green)">tblWFMjzFYQavfw4h ✓</span>
+        </div>
+      </div>
+
+      <div class="form-card">
+        <div class="card-ttl">Field Mapping (Job Cards)</div>
+        <div style="font-family:var(--mono);font-size:10px;color:var(--text-2);line-height:2;">
+          JC Reference &nbsp;fld0epAfApDO5Cxyv<br>
+          Title &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;fldaNMYaVBdw4rxho<br>
+          Status &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;fldNoL4FzEHcT027I<br>
+          Priority &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;fldliJYCbS5nrRT6R<br>
+          Site/Address &nbsp;fldUhpNu8fh16J0Gb<br>
+          Due Date &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;fldahcH4NfVwKVqrd<br>
+          Progress% &nbsp;&nbsp;&nbsp;&nbsp;fldOYTsZ9k0QaKsGg<br>
+          Responsible &nbsp;&nbsp;fld8S3uhtvvf065Wk<br>
+          Overdue Flag &nbsp;fldNMeufuo0dWXDDA<br>
+          Activity Log &nbsp;&nbsp;fldv0d0Y43jpuiboU
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+
+  <!-- TRIAGE VIEW -->
+  <div class="view" id="view-triage">
+    <div class="view-pad">
+      <div class="search-wrap">
+        <span class="si">⌕</span>
+        <input type="text" id="triageSearch" placeholder="Search client, title, ref…" oninput="filterTriage(this.value)" autocomplete="off" spellcheck="false">
+      </div>
+      <div class="filter-bar">
+        <button class="fchip on"  onclick="setTriageFilter(this,'ALL')">All</button>
+        <button class="fchip"     onclick="setTriageFilter(this,'Critical')">🔴 Critical</button>
+        <button class="fchip"     onclick="setTriageFilter(this,'High')">🟡 High</button>
+        <button class="fchip"     onclick="setTriageFilter(this,'Medium')">🔵 Medium</button>
+        <button class="fchip"     onclick="setTriageFilter(this,'overdue')">⚠ Overdue</button>
+        <button class="fchip"     onclick="setTriageFilter(this,'Active')">Active</button>
+        <button class="fchip"     onclick="setTriageFilter(this,'In Progress')">In Progress</button>
+        <button class="fchip"     onclick="setTriageFilter(this,'Quotation Pending')">Quot. Pending</button>
+        <button class="fchip"     onclick="setTriageFilter(this,'COC Pending')">COC Pending</button>
+      </div>
+      <div id="triage-content"></div>
+    </div>
+  </div>
+
+</div><!-- /views -->
+
+<!-- BOTTOM NAV -->
+<div class="bottomnav">
+  <button class="bnav-btn on" id="bnav-dashboard" onclick="goView('dashboard')">
+    <span class="bnav-icon">
+      <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+    </span>
+    Dashboard
+  </button>
+  <button class="bnav-btn" id="bnav-tickets" onclick="goView('tickets')">
+    <span class="bnav-icon">
+      <div class="badge" id="badge-open" style="display:none">0</div>
+      <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+    </span>
+    Job Cards
+  </button>
+  <button class="bnav-btn" id="bnav-new" onclick="goView('new')">
+    <span class="bnav-icon">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+    </span>
+    New Ticket
+  </button>
+  <button class="bnav-btn" id="bnav-sites" onclick="goView('sites')">
+    <span class="bnav-icon">
+      <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+    </span>
+    Clients
+  </button>
+  <button class="bnav-btn" id="bnav-triage" onclick="goView('triage')">
+    <span class="bnav-icon">
+      <svg viewBox="0 0 24 24"><polygon points="7.86 2 16.14 2 22 7.86 22 16.14 16.14 22 7.86 22 2 16.14 2 7.86 7.86 2"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+    </span>
+    Triage
+  </button>
+</div>
+
+<!-- FAB -->
+<button class="fab" onclick="quickEmergency()" title="Emergency Ticket">⚡</button>
+
+<!-- PAT MODAL -->
+<div class="overlay" id="patModal">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Airtable Personal Access Token</div>
+    <div style="font-family:var(--mono);font-size:10px;color:var(--text-2);margin-bottom:12px;line-height:1.8;">
+      Generate at <strong style="color:var(--amber)">airtable.com/create/tokens</strong><br>
+      Scopes: <strong style="color:var(--amber)">data.records:read</strong> + <strong style="color:var(--amber)">data.records:write</strong><br>
+      Base: <strong style="color:var(--amber)">app0tq4y9wH10h6Up</strong>  (O&amp;M Platform)
+    </div>
+    <div class="field">
+      <label>Paste your token</label>
+      <input type="password" id="modal-pat" placeholder="pat_xxxxxxxxxxxxxxxxxxxx" autocomplete="off">
+    </div>
+    <button class="submit-btn" onclick="savePatFromModal()" style="margin-top:10px;">
+      Save &amp; Connect
+    </button>
+    <button class="btn-out" onclick="closePatModal()" style="width:100%;margin-top:8px;">Cancel</button>
+  </div>
+</div>
+
+</div><!-- /app -->
+
+<script>
+// ════════════════════════════════════════
+// CONFIG — O&M ONLY
+// ════════════════════════════════════════
+const AT_BASE = 'app0tq4y9wH10h6Up';
+const TABLES = {
+  JC:       'tbl2wqnfM0eDa8M7P',
+  DOCS:     'tbljdfGLoiHlrdzfs',
+  ACTIVITY: 'tblWSJlbiGWlZ6yGL',
+  CLIENTS:  'tblljzSDboKGUJAXg',
+  PEOPLE:   'tblYXKBqfN4zituh1',
+  SIGNOFFS: 'tblAukQbK8WvVj16i',
+};
+
+// ── FIELD CONSTANTS — use field IDs (confirmed from schema) ──
+// Airtable REST returns fields keyed by ID when using fields[] param,
+// and by name when not using it. We use the raw fetch (no filter) and
+// try BOTH id and name keys via the rf() helper below.
+const F = {
+  // Field NAMES — JC table fetched without returnFieldsByFieldId so keyed by name
+  JC_REF:      'JC Reference',
+  JC_TITLE:    'Title',
+  JC_STATUS:   'Status',
+  JC_PRIORITY: 'Priority',
+  JC_SITE:     'Site / Address',
+  JC_DUE:      'Due Date',
+  JC_ISSUED:   'Issued Date',
+  JC_RESP:     'Responsible',
+  JC_OVERDUE:  'Overdue',
+  JC_PROGRESS: 'Progress %',
+  JC_DAYS_OVR: 'Days Overdue',
+  JC_JOBTYPE:  'Job Type',
+  JC_HEALTH:   'SLA Status',
+  JC_CLIENT:   'Client',
+  JC_ACCT:     'Account Manager',
+  JC_CAN_ADV:  'Can Advance',
+  JC_BLOCK_RSN:'Blocked Reason',
+  JC_ACTLOG:   'Activity Log',
+  JC_STARTED:  'Started Project',
+  JC_DOCS:     'Documents',       // Attachments field
+  JC_COMPDATE: 'Completed Project',
+  // Clients table (also fetched by name)
+  CL_NAME:     'Client Name',
+  CL_CONTACT:  'Contact Person',
+  CL_EMAIL:    'Email',
+  CL_SITES:    'Sites',
+  // Activity Log field IDs (fetched with returnFieldsByFieldId=true)
+  AL_JC:       'fldq3dlkkE6lRd9za',
+  AL_UPDATE:   'fldcciRgQcM8gPwBR',
+  AL_TS:       'fldF2Plx7JzfbjcbV',
+  AL_ACTTYPE:  'fld3Im7LzAcn6ckQe',
+  // People
+  PE_ROLE:     'Role',
+  PE_EMAIL:    'Email',
+  PE_PHONE:    'Phone',
+};
+// rf(fields, id, ...nameFallbacks) — read a field trying ID then name fallbacks
+function rf(fields, id, ...names) {
+  if (fields[id] !== undefined) return fields[id];
+  for (const n of names) { if (fields[n] !== undefined) return fields[n]; }
+  return undefined;
+}
+
+// Helper: extract a plain string value from a field regardless of type
+function fv(val) {
+  if (val === null || val === undefined) return '';
+  if (typeof val === 'string') return val;
+  if (typeof val === 'number') return String(val);
+  if (typeof val === 'boolean') return val ? 'Yes' : 'No';
+  if (Array.isArray(val)) {
+    // Array of linked records [{id, name}] or strings
+    if (val[0] && typeof val[0] === 'object' && val[0].name) return val[0].name;
+    return val.map(v => (v && v.name) ? v.name : String(v)).join(', ');
+  }
+  if (typeof val === 'object') {
+    if (val.name) return val.name;       // singleSelect {id, name}
+    if (val.email) return val.name || val.email; // collaborator
+    if (val.url) return val.url;         // attachment
+    return JSON.stringify(val);
+  }
+  return String(val);
+}
+
+// STATE
+let AT_KEY = localStorage.getItem('tagex_om_key') || '';
+let jcData = [];
+let clientData = [];
+let peopleData = [];
+let docsData   = {};  // map: jcRecId → [doc records]
+let actLogData = [];
+let currentView = 'dashboard';
+let prevView = 'dashboard';
+let currentJCFilter  = 'ALL';
+let currentJCPri     = 'ALL';
+let triageSearch     = '';
+let triagePriFilter  = 'ALL';
+let dashSearch       = '';
+let selectedPri = 'High';
+let currentDetailId = null;
+
+// ════════════════════════════════════════
+// AIRTABLE API — direct REST calls
+// Same pattern as tagex_site_bom.html (proven working)
+// Requires user PAT with data.records:read + data.records:write
+// ════════════════════════════════════════
+const AT_URL = 'https://api.airtable.com/v0';
+
+function atHeaders() {
+  return {
+    Authorization: `Bearer ${AT_KEY}`,
+    'Content-Type': 'application/json'
+  };
+}
+
+async function atGet(url) {
+  const r = await fetch(url, { headers: atHeaders() });
+  if (!r.ok) {
+    const e = await r.json().catch(() => ({}));
+    throw new Error(e.error?.message || `AT ${r.status}`);
+  }
+  return r.json();
+}
+
+// Fetch clients WITHOUT returnFieldsByFieldId so fields are keyed by name
+// This makes match.fields['Name'] reliable in resolveLinkedName
+async function fetchClients() {
+  let all = [], offset = null;
+  do {
+    const url = `${AT_URL}/${AT_BASE}/${encodeURIComponent(TABLES.CLIENTS)}?pageSize=100${offset ? '&offset='+encodeURIComponent(offset) : ''}`;
+    const d = await atGet(url);
+    for (const r of (d.records || [])) { r.fields = r.fields || {}; all.push(r); }
+    offset = d.offset || null;
+  } while (offset);
+  return { records: all };
+}
+
+async function atFetchAll(tableId, fieldIds) {
+  // Fetch WITHOUT returnFieldsByFieldId so fields are keyed by name
+  let all = [], offset = null;
+  do {
+    const base = `${AT_URL}/${AT_BASE}/${encodeURIComponent(tableId)}?pageSize=100`;
+    const url  = `${base}${offset ? '&offset='+encodeURIComponent(offset) : ''}`;
+    const d = await atGet(url);
+    for (const r of (d.records || [])) { r.fields = r.fields || {}; all.push(r); }
+    offset = d.offset || null;
+  } while (offset);
+  return { records: all };
+}
+
+async function atFetchFiltered(tableId, fieldIds, filterFormula) {
+  // No returnFieldsByFieldId — fields keyed by name, filterByFormula uses {Field Name} syntax
+  let all = [], offset = null;
+  const filter = `filterByFormula=${encodeURIComponent(filterFormula)}`;
+  const sort = ``; // sort client-side to avoid field name issues
+  do {
+    const qs = [filter, sort].filter(Boolean).join('&');
+    const url = `${AT_URL}/${AT_BASE}/${encodeURIComponent(tableId)}?pageSize=100&${qs}${offset ? '&offset=' + encodeURIComponent(offset) : ''}`;
+    const d = await atGet(url);
+    all = all.concat(d.records || []);
+    offset = d.offset || null;
+  } while (offset);
+  return { records: all };
+}
+
+async function atCreate(tableId, fields) {
+  const url = `${AT_URL}/${AT_BASE}/${tableId}`;
+  const r = await fetch(url, {
+    method: 'POST',
+    headers: atHeaders(),
+    body: JSON.stringify({ fields })
+  });
+  if (!r.ok) {
+    const e = await r.json().catch(() => ({}));
+    throw new Error(e.error?.message || `AT ${r.status}`);
+  }
+  return r.json();
+}
+
+async function atPatch(tableId, recId, fields) {
+  const url = `${AT_URL}/${AT_BASE}/${tableId}/${recId}`;
+  const r = await fetch(url, {
+    method: 'PATCH',
+    headers: atHeaders(),
+    body: JSON.stringify({ fields })
+  });
+  if (!r.ok) {
+    const e = await r.json().catch(() => ({}));
+    throw new Error(e.error?.message || `AT ${r.status}`);
+  }
+  return r.json();
+}
+
+// ════════════════════════════════════════
+// LOAD DATA
+// ════════════════════════════════════════
+async function loadAll() {
+  if (!AT_KEY) { setSyncStatus('nokey'); setDashStatus('nokey'); return; }
+  setSyncStatus('loading');
+  setDashStatus('loading');
+  try {
+    // Field IDs — Airtable returns cellValuesByFieldId when fields[] is used
+    const JC_FIELDS = [];  // No filter — fetch ALL fields keyed by name
+    const CL_FIELDS = [];  // No filter — fetch ALL fields keyed by name
+    // People — fetch all fields (no ID filter needed)
+    const PE_FIELDS = [];
+
+    // Fetch independently — a failure on clients/people won't block job cards
+    const [jcRes, clRes, peRes] = await Promise.allSettled([
+      atFetchAll(TABLES.JC, JC_FIELDS),
+      fetchClients(),
+      atFetchAll(TABLES.PEOPLE, PE_FIELDS),
+    ]);
+
+    jcData     = jcRes.status === 'fulfilled'  ? (jcRes.value.records  || []).filter(r => !['Completed','Closed'].includes(fv(r.fields[F.JC_STATUS]))) : [];
+    clientData = clRes.status === 'fulfilled'  ? (clRes.value.records  || []) : [];
+    peopleData = peRes.status === 'fulfilled'  ? (peRes.value.records  || []) : [];
+
+    // Pre-load all Documents — build map: jcRecId → [doc records]
+    try {
+      const allDocs = await atFetchAll(TABLES.DOCS, []);
+      docsData = {};
+      for (const doc of (allDocs.records || [])) {
+        const jcLinks = doc.fields['Job Card [PRIMARY LINK]'] || doc.fields['Job Card'] || [];
+        for (const jcId of jcLinks) {
+          const id = typeof jcId === 'string' ? jcId : jcId?.id;
+          if (id) {
+            if (!docsData[id]) docsData[id] = [];
+            docsData[id].push(doc);
+          }
+        }
+      }
+    } catch(e) { console.warn('Docs preload failed:', e.message); }
+
+    // Log any partial failures to console for debugging
+    if (jcRes.status === 'rejected')  console.warn('JC fetch failed:', jcRes.reason);
+    if (clRes.status === 'rejected')  console.warn('Clients fetch failed:', clRes.reason);
+    if (peRes.status === 'rejected')  console.warn('People fetch failed:', peRes.reason);
+
+    // Console diagnostic — shows raw field keys from first record
+    if (jcData.length) {
+
+    }
+
+    // Must have job cards to proceed
+    if (!jcData.length && jcRes.status === 'rejected') throw jcRes.reason;
+
+    setSyncStatus('ok');
+    updateBadge();
+    renderDashboard();
+    if (currentView === 'tickets') renderJCList(jcData);
+    if (currentView === 'triage')  renderTriage();
+    if (currentView === 'sites') renderClientsTab('clients');
+    populateJCDropdown();
+    document.getElementById('patBtn').textContent = 'LIVE';
+    document.getElementById('patBtn').classList.add('ok');
+    setDashStatus('ok', jcData.length, clientData.length, peopleData.length);
+    startAutoRefresh();
+  } catch(e) {
+    setSyncStatus('err');
+    setDashStatus('err', e.message);
+    console.error('AT error:', e);
+  }
+}
+
+async function loadActivityLog(jcId) {
+  try {
+    // Fetch all activity records then filter client-side
+    // avoids filterByFormula field name ambiguity entirely
+    const res = await atFetchAll(TABLES.ACTIVITY, []);
+    const all  = res.records || [];
+    const recs = all.filter(r => {
+      const jcField = r.fields['Job Card [PRIMARY LINK]'] || r.fields['Job Card'] || [];
+      const arr = Array.isArray(jcField) ? jcField : [jcField];
+      return arr.some(v => {
+        if (!v) return false;
+        if (typeof v === 'string') return v === jcId;
+        return v.id === jcId;
+      });
+    }).sort((a,b) => new Date(b.createdTime||0) - new Date(a.createdTime||0));
+
+    return recs;
+  } catch(e) {
+    console.error('[ACT] loadActivityLog error:', e.message);
+    return [];
+  }
+}
+
+// ════════════════════════════════════════
+// UI HELPERS
+// ════════════════════════════════════════
+function setSyncStatus(state) {
+  const d = document.getElementById('syncDot');
+  d.className = 'sync-dot';
+  if (state === 'ok') d.classList.add('live');
+  else if (state === 'err') d.classList.add('err');
+  else if (state === 'loading') { d.style.background = 'var(--amber)'; d.style.animation = 'pulse 0.5s infinite'; }
+}
+
+function setDashStatus(state, a, b, c) {
+  const el = document.getElementById('dash-at-status');
+  if (state === 'nokey') {
+    el.innerHTML = `<div class="err-box">🔑 No token set. Tap <strong>SET KEY</strong> top-right to enter your Airtable Personal Access Token.</div>`;
+  } else if (state === 'loading') {
+    el.innerHTML = `<div class="at-status"><span class="spin"></span>&nbsp;&nbsp;Loading from Airtable O&amp;M…</div>`;
+  } else if (state === 'err') {
+    el.innerHTML = `<div class="err-box">✕ Airtable error: ${a}<br><small>Check your PAT has data.records:read on base app0tq4y9wH10h6Up</small></div>`;
+  } else if (state === 'ok') {
+    el.innerHTML = `<div class="at-status"><div class="sync-dot live"></div>O&amp;M live · ${a} job cards · ${b} clients · ${c} people</div>`;
+  }
+}
+
+function updateBadge() {
+  const open = jcData.filter(r => {
+    const s = fv(r.fields[F.JC_STATUS]) || '';
+    return s !== 'Completed' && s !== 'Closed' && s !== 'Cancelled';
+  }).length;
+  const b = document.getElementById('badge-open');
+  if (open > 0) { b.style.display = 'flex'; b.textContent = open > 99 ? '99+' : open; }
+  else b.style.display = 'none';
+}
+
+function getStatusClass(s) {
+  const m = {
+    'New':                  's-new',
+    'Under Review':         's-new',
+    'Quotation Pending':    's-waiting',
+    'Approved':             's-open',
+    'Scheduled':            's-open',
+    'In Progress':          's-inprog',
+    'Active':               's-inprog',
+    'Quotation Pending':    's-waiting',
+    'COC Pending':          's-waiting',
+    'Monitoring':           's-waiting',
+    'Completed':            's-done',
+    'Closed':               's-closed',
+    'Cancelled':            's-closed',
+  };
+  return m[s] || 's-open';
+}
+
+function getPriClass(p) {
+  if (!p) return 'p-normal';
+  const pl = p.toLowerCase();
+  if (pl === 'urgent' || pl === 'critical') return 'pri p-urgent';
+  if (pl === 'high') return 'pri p-high';
+  return 'pri p-normal';
+}
+
+function isOverdue(rec) {
+  const flag = rec.fields[F.JC_OVERDUE] || '';
+  return String(flag).toUpperCase() === 'OVERDUE';
+}
+
+function timeAgo(dateStr) {
+  if (!dateStr) return '—';
+  const d = new Date(dateStr);
+  const days = Math.floor((new Date() - d) / 86400000);
+  if (days === 0) return 'Today';
+  if (days === 1) return 'Yesterday';
+  if (days < 0) return `In ${Math.abs(days)}d`;
+  return `${days}d ago`;
+}
+
+function initials(name) {
+  if (!name) return '?';
+  const parts = name.split(' ');
+  if (parts.length >= 2) return (parts[0][0] + parts[parts.length-1][0]).toUpperCase();
+  return name.substring(0, 2).toUpperCase();
+}
+
+// Resolve a linkedRecord field value to a display name
+// Tries: arr[0].name → clientData lookup by id → arr[0].id (fallback)
+function resolveLinkedName(arr) {
+  if (!arr || !arr.length) return '—';
+  const first = arr[0];
+  // Without returnFieldsByFieldId, linked records return [{id, name}]
+  // .name is the linked record's primary field value
+  if (first?.name) return first.name;
+  // Fallback: look up in clientData by record ID
+  const recId = typeof first === 'string' ? first : first?.id;
+  if (recId && clientData.length) {
+    const match = clientData.find(c => c.id === recId);
+    if (match) {
+      const n = match.fields['Client Name'] || match.fields['Name'] || '';
+      if (n) return n;
+    }
+  }
+  return '—';
+}
+
+function jcCard(rec) {
+  const f = rec.fields;
+  // Fields keyed by ID (since we fetch with fields[] param)
+  const ref      = fv(f[F.JC_REF])      || '—';
+  const title    = fv(f[F.JC_TITLE])    || 'Untitled';
+  const status   = fv(f[F.JC_STATUS])   || '—';
+  const pri      = fv(f[F.JC_PRIORITY]) || 'Normal';
+  const due      = f[F.JC_DUE]          || '';
+  const prog     = f[F.JC_PROGRESS];
+  const over     = isOverdue(rec);
+  const days     = f[F.JC_DAYS_OVR];
+  const jobType  = fv(f[F.JC_JOBTYPE])  || '';
+  // Responsible — collaborator object {id, email, name}
+  const respRaw  = f[F.JC_RESP];
+  const respName = respRaw?.name || 'Unassigned';
+  // Site — resolve linked record name via helper (handles missing .name)
+  const siteArr = f[F.JC_CLIENT] || f[F.JC_SITE] || [];
+  const site = resolveLinkedName(Array.isArray(siteArr) ? siteArr : [siteArr]);
+
+
+  return `
+  <div class="tcard" onclick="openDetail('${rec.id}')">
+    <div class="tcard-ref">${ref}${jobType ? ' · ' + jobType : ''}</div>
+    ${site !== '—' ? `<div class="tcard-client">🏢 ${site}</div>` : ''}
+    <div class="tcard-title">${title}</div>
+    <div class="tcard-meta">
+      <span class="status-badge ${getStatusClass(status)}">${status}</span>
+      <span class="pri ${getPriClass(pri)}">${pri}</span>
+      ${over ? `<span style="font-family:var(--mono);font-size:10px;color:var(--red)">⚠ ${days != null ? Math.round(days) + 'd overdue' : 'OVERDUE'}</span>` : ''}
+    </div>
+    <div class="tcard-foot">
+      <div class="tcard-tech">
+        <div class="av">${initials(respName)}</div>
+        ${respName}
+      </div>
+      <div style="text-align:right">
+        ${prog != null ? `<div style="font-family:var(--mono);font-size:10px;color:var(--text-3)">${prog}% done</div>` : ''}
+        <div class="tcard-date">${due ? timeAgo(due) : '—'}</div>
+      </div>
+    </div>
+  </div>`;
+}
+
+// ════════════════════════════════════════
+// DASHBOARD
+// ════════════════════════════════════════
+function dashMatchesFilters(rec, search, statusFilter) {
+  const f = rec.fields;
+  const siteArr = f[F.JC_CLIENT] || f[F.JC_SITE] || [];
+  const site = resolveLinkedName(Array.isArray(siteArr) ? siteArr : [siteArr]);
+  if (search) {
+    const ql = search.toLowerCase();
+    const matches = fv(f[F.JC_REF]).toLowerCase().includes(ql) ||
+                    fv(f[F.JC_TITLE]).toLowerCase().includes(ql) ||
+                    site.toLowerCase().includes(ql) ||
+                    fv(f[F.JC_STATUS]).toLowerCase().includes(ql);
+    if (!matches) return false;
+  }
+  if (statusFilter === 'ALL') return true;
+  if (statusFilter === 'overdue') return isOverdue(rec);
+  const st = fv(f[F.JC_STATUS]);
+  return st === statusFilter;
+}
+
+let dashFilter = 'ALL';
+
+function setDashFilter(el, val) {
+  document.querySelectorAll('#dash-filter-bar .fchip').forEach(c => c.classList.remove('on'));
+  el.classList.add('on');
+  dashFilter = val;
+  renderDashboard();
+}
+
+function filterDash(q) {
+  dashSearch = q;
+  renderDashboard();
+}
+
+function renderDashboard() {
+  if (!jcData.length) return;
+  const total    = jcData.length;
+  const inprog   = jcData.filter(r => ['In Progress','Active'].includes(fv(r.fields[F.JC_STATUS]))).length;
+  const newCount = jcData.filter(r => fv(r.fields[F.JC_STATUS]) === 'New').length;
+  const quotPend = jcData.filter(r => fv(r.fields[F.JC_STATUS]) === 'Quotation Pending').length;
+  const cocPend  = jcData.filter(r => fv(r.fields[F.JC_STATUS]) === 'COC Pending').length;
+  document.getElementById('s-total').textContent   = total;
+  document.getElementById('s-inprog').textContent  = inprog;
+  document.getElementById('s-new').textContent     = newCount;
+  document.getElementById('s-quot').textContent    = quotPend;
+  document.getElementById('s-coc').textContent     = cocPend;
+
+  // Filtered cards (search + status filter)
+  const filtered = jcData.filter(r => dashMatchesFilters(r, dashSearch, dashFilter));
+  const cardsEl = document.getElementById('dash-cards');
+
+  if (dashSearch || dashFilter !== 'ALL') {
+    // Show filtered results, hide "recently updated" section
+    document.getElementById('dash-recent-lbl').style.display = 'none';
+    document.getElementById('dash-recent').style.display = 'none';
+    cardsEl.innerHTML = filtered.length
+      ? `<div style="font-family:var(--mono);font-size:9px;color:var(--text-3);margin-bottom:8px;">${filtered.length} result${filtered.length!==1?'s':''}</div>` +
+        filtered.map(r => jcCard(r)).join('')
+      : '<div class="empty"><div class="empty-icon">🔍</div>No results</div>';
+  } else {
+    // Default: overdue + recently updated
+    document.getElementById('dash-recent-lbl').style.display = '';
+    document.getElementById('dash-recent').style.display = '';
+    const overdueRecs = jcData.filter(r => isOverdue(r));
+    cardsEl.innerHTML = overdueRecs.length
+      ? `<div class="sec-label">Overdue / At Risk</div>` + overdueRecs.map(r => jcCard(r)).join('')
+      : '<div class="sec-label">Overdue / At Risk</div><div class="empty"><div class="empty-icon">✓</div>No overdue job cards</div>';
+    const recent = [...jcData]
+      .sort((a,b) => {
+        const da = a.fields[F.JC_ISSUED] || a.createdTime || 0;
+        const db = b.fields[F.JC_ISSUED] || b.createdTime || 0;
+        return new Date(db) - new Date(da);
+      })
+      .slice(0, 5);
+    document.getElementById('dash-recent').innerHTML = recent.length
+      ? recent.map(r => jcCard(r)).join('')
+      : '<div class="empty"><div class="empty-icon">📋</div>No records found</div>';
+  }
+}
+
+// ════════════════════════════════════════
+// JOB CARDS LIST
+// ════════════════════════════════════════
+function renderJCList(list) {
+  const el = document.getElementById('jcList');
+  if (!list.length) { el.innerHTML = '<div class="empty"><div class="empty-icon">📋</div>No job cards found</div>'; return; }
+  el.innerHTML = list.map(r => jcCard(r)).join('');
+}
+
+function getJCFiltered() {
+  const q = (document.getElementById('jcSearch')?.value || '').toLowerCase();
+  return jcData.filter(r => {
+    const f = r.fields;
+    const siteArr = f[F.JC_CLIENT] || f[F.JC_SITE] || [];
+    const site = resolveLinkedName(Array.isArray(siteArr) ? siteArr : [siteArr]);
+    const matchSearch = !q ||
+      fv(f[F.JC_REF]).toLowerCase().includes(q) ||
+      fv(f[F.JC_TITLE]).toLowerCase().includes(q) ||
+      site.toLowerCase().includes(q) ||
+      fv(f[F.JC_STATUS]).toLowerCase().includes(q);
+    const matchStatus = currentJCFilter === 'ALL' || fv(f[F.JC_STATUS]) === currentJCFilter;
+    const matchPri = currentJCPri === 'ALL'
+      ? true
+      : currentJCPri === 'overdue'
+        ? isOverdue(r)
+        : fv(f[F.JC_PRIORITY]) === currentJCPri;
+    return matchSearch && matchStatus && matchPri;
+  });
+}
+
+function setJCFilter(el, status) {
+  document.querySelectorAll('#jc-status-bar .fchip').forEach(c => c.classList.remove('on'));
+  el.classList.add('on');
+  currentJCFilter = status;
+  renderJCList(getJCFiltered());
+}
+
+function setJCPriFilter(el, pri) {
+  document.querySelectorAll('#jc-pri-bar .fchip').forEach(c => c.classList.remove('on'));
+  el.classList.add('on');
+  currentJCPri = pri;
+  renderJCList(getJCFiltered());
+}
+
+function filterJCs(q) {
+  renderJCList(getJCFiltered());
+}
+
+// ════════════════════════════════════════
+// DETAIL VIEW
+// ════════════════════════════════════════
+async function openDetail(recId) {
+  const rec = jcData.find(r => r.id === recId);
+  if (!rec) return;
+  currentDetailId = recId;
+  prevView = currentView;
+  const f = rec.fields;
+
+  document.getElementById('d-ref').textContent   = fv(f[F.JC_REF]) || recId;
+  document.getElementById('d-title').textContent = fv(f[F.JC_TITLE]) || 'Untitled';
+
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.getElementById('view-detail').classList.add('active');
+  document.getElementById('d-body').innerHTML = `<div class="loading-row"><span class="spin"></span> Loading activity log…</div>`;
+
+  // Load activity log for this JC
+  // Load activity log with timeout guard
+  let actLog = [];
+  try {
+    const actPromise = loadActivityLog(recId);
+    const timeout = new Promise((_,rej) => setTimeout(() => rej(new Error('timeout')), 10000));
+    actLog = await Promise.race([actPromise, timeout]);
+  } catch(e) { console.warn('Activity log load:', e.message); actLog = []; }
+
+  const status   = fv(f[F.JC_STATUS]) || '—';
+  const pri      = fv(f[F.JC_PRIORITY]) || 'Normal';
+  const siteArr2 = f[F.JC_CLIENT] || f[F.JC_SITE];
+  const site = resolveLinkedName(Array.isArray(siteArr2) ? siteArr2 : (siteArr2 ? [siteArr2] : []));
+  const due      = fv(rf(f, F.JC_DUE, 'Due Date')) || '—';
+  const issued   = fv(rf(f, F.JC_ISSUED, 'Issued Date')) || '—';
+  const started  = fv(rf(f, F.JC_STARTED, 'Started Project')) || '—';
+  const compDate = fv(rf(f, F.JC_COMPDATE, 'Completed Project')) || '';
+  const docs     = f[F.JC_DOCS] || f['Documents'] || [];
+  const respRaw  = f[F.JC_RESP];
+  const respName = respRaw ? (respRaw.name || fv(respRaw)) : 'Unassigned';
+  const progNum  = rf(f, F.JC_PROGRESS, 'Progress %');
+  const prog     = progNum != null ? progNum + '%' : '—';
+  const over     = isOverdue(rec);
+  const days     = f[F.JC_DAYS_OVR];
+  const health   = fv(rf(f, F.JC_HEALTH, 'SLA Status')) || '';
+  const canAdv   = fv(rf(f, F.JC_CAN_ADV, 'Can Advance')) || '';
+  const blockRsn = fv(rf(f, F.JC_BLOCK_RSN, 'Blocked Reason')) || '';
+  const jobType  = fv(rf(f, F.JC_JOBTYPE, 'Job Type')) || '—';
+
+  const actHTML = actLog.length
+    ? actLog.map((a, i) => {
+        const tsRaw = a.fields['Timestamp'] || a.createdTime;
+        const ts = tsRaw ? new Date(tsRaw).toLocaleString('en-ZA',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}) : '—';
+        const type = fv(a.fields['Action Type'] || a.fields['Type'] || '');
+        const rawNote = a.fields['Update'] || a.fields['Update / Notes'] || a.fields['Notes'] || '';
+        const update = fv(rawNote).trim().replace(/</g,'&lt;').replace(/>/g,'&gt;') || '(no note)';
+        return `
+        <div class="tl-item">
+          <div class="tl-dot ${i===0?'g':''}"></div>
+          <div class="tl-time">${ts}${type ? ' · <span class="tl-who">'+type+'</span>' : ''}</div>
+          <div class="tl-text">${update}</div>
+        </div>`;
+      }).join('')
+    : '<div style="font-family:var(--mono);font-size:11px;color:var(--text-3);padding:10px 0;">No activity log entries yet.</div>';
+
+  document.getElementById('d-body').innerHTML = `
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;">
+      <span class="status-badge ${getStatusClass(status)}">${status}</span>
+      <span class="pri ${getPriClass(pri)}">${pri}</span>
+      ${over ? `<span style="font-family:var(--mono);font-size:10px;color:var(--red)">⚠ ${days != null ? Math.round(days)+'d overdue' : 'OVERDUE'}</span>` : ''}
+      ${health ? `<span style="font-family:var(--mono);font-size:10px;color:var(--text-3)">${health}</span>` : ''}
+    </div>
+
+    ${canAdv === 'No' && blockRsn ? `<div class="err-box">⛔ Cannot advance: ${blockRsn}</div>` : ''}
+
+    <div class="sact-bar">
+      <button class="sact pri" onclick="updateJCStatus('${recId}','In Progress')">▶ In Progress</button>
+      <button class="sact"     onclick="updateJCStatus('${recId}','Monitoring')">👁 Monitoring</button>
+      <button class="sact ok"  onclick="updateJCStatus('${recId}','Completed')">✓ Completed</button>
+      <button class="sact"     onclick="updateJCStatus('${recId}','Closed')">🔒 Close</button>
+      <button class="sact danger" onclick="logActivity('${recId}','Escalating — urgent attention required','Issue Raised')">↑ Escalate</button>
+    </div>
+
+    <div class="df"><label>Job Type</label><div class="df-val">${jobType}</div></div>
+    <div class="df"><label>Site / Address</label><div class="df-val" style="font-size:12px">${site.replace(/\n/g,'<br>')}</div></div>
+    <div class="df"><label>Responsible</label><div class="df-val">${respName}</div></div>
+    <div class="df"><label>Progress</label>
+      <div style="display:flex;align-items:center;gap:10px;margin-top:4px;">
+        <div style="flex:1;height:6px;background:var(--border);border-radius:3px;">
+          <div style="height:6px;background:var(--amber);border-radius:3px;width:${f[F.JC_PROGRESS]||0}%"></div>
+        </div>
+        <span style="font-family:var(--mono);font-size:11px;color:var(--amber)">${prog}</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;margin-top:8px;">
+        <input type="range" min="0" max="100" step="5" value="${f[F.JC_PROGRESS]||0}"
+          style="flex:1;accent-color:var(--amber);"
+          oninput="this.nextElementSibling.textContent=this.value+'%'"
+          onchange="updateJCProgress('${recId}', this.value)">
+        <span style="font-family:var(--mono);font-size:11px;color:var(--text-2);min-width:36px">${f[F.JC_PROGRESS]||0}%</span>
+      </div>
+    </div>
+    <div class="df"><label>Due Date</label>
+      <div class="df-val mono" style="margin-bottom:4px">${due} · ${timeAgo(due)}</div>
+      <input type="date" value="${due}" style="background:var(--surface);border:1px solid var(--border);border-radius:var(--rs);color:var(--text);font-family:var(--mono);font-size:12px;padding:6px 10px;width:100%;outline:none;"
+        onchange="updateJCDue('${recId}', this.value)">
+    </div>
+    <div class="df"><label>Issued Date</label><div class="df-val mono">${issued}</div></div>
+    <div class="df"><label>Started Date</label><div class="df-val mono">${started !== '—' ? started + ' · ' + timeAgo(started) : '—'}</div></div>
+    <div class="df"><label>Completed Date</label>
+      ${compDate ? `<div class="df-val mono" style="margin-bottom:4px">${compDate} · ${timeAgo(compDate)}</div>` : ''}
+      <input type="date" value="${compDate}" style="background:var(--surface);border:1px solid var(--border);border-radius:var(--rs);color:var(--text);font-family:var(--mono);font-size:12px;padding:6px 10px;width:100%;outline:none;"
+        onchange="updateJCCompletedDate('${recId}', this.value)">
+    </div>
+    <div class="df">
+      <label>Documents</label>
+      <div id="doc-list" class="doc-grid"></div>
+      <div class="doc-upload-area" id="doc-upload-area" onclick="document.getElementById('doc-file-input').click()"
+           ondragover="event.preventDefault();this.classList.add('dragover')"
+           ondragleave="this.classList.remove('dragover')"
+           ondrop="handleDocDrop(event,'${recId}')">
+        📎 Tap to upload or drag a file here
+      </div>
+      <input type="file" id="doc-file-input" style="display:none" multiple
+             onchange="handleDocUpload(event,'${recId}')">
+    </div>
+    <div class="df"><label>Airtable Record ID</label><div class="df-val mono" style="color:var(--text-3);font-size:10px;">${recId}</div></div>
+
+    <div class="divider"></div>
+    <div class="sec-label" style="margin-top:0">Activity Log <span style="font-weight:400;color:var(--text-3)">(${actLog.length} entries)</span></div>
+    <div class="tl">${actHTML}</div>
+
+    <div class="comment-row">
+      <input type="text" id="newNote" placeholder="Add a note to activity log…">
+      <button class="comment-send" onclick="addNote('${recId}')">LOG</button>
+    </div>
+
+    <div class="divider"></div>
+    <div class="btn-row">
+      <button class="btn-out" onclick="openNewForJC('${recId}','${(f[F.JC_REF]||'').replace(/'/g,'')}')">📤 New Ticket</button>
+      <button class="btn-out" onclick="showToast('PDF export — coming in v2')">📄 Report</button>
+    </div>
+  `;
+  // Render docs immediately after HTML is set — docsData is pre-loaded
+  renderDocuments(recId);
+  // Clean up any orphan records from failed uploads (runs silently in background)
+  cleanupOrphanDocs(recId).then(n => { if (n > 0) { refreshDocsData(recId); renderDocuments(recId); } });
+}
+
+function closeDetail() { goView(prevView); }
+
+// ════════════════════════════════════════
+// LOG ACTIVITY (write to Airtable)
+// ════════════════════════════════════════
+async function logActivity(jcId, note, actionType) {
+  if (!AT_KEY) { showToast('⚠ Set your Airtable key first'); return; }
+  try {
+    await atCreate(TABLES.ACTIVITY, {
+      'Update': note,
+      'Job Card [PRIMARY LINK]': [jcId],
+    });
+    showToast('✓ Logged to Airtable Activity Log');
+    // Reload detail
+    openDetail(jcId);
+  } catch(e) {
+    showToast('✕ Log failed: ' + e.message);
+  }
+}
+
+async function addNote(jcId) {
+  const el = document.getElementById('newNote');
+  const text = el.value.trim();
+  if (!text) return;
+  el.value = '';
+  await logActivity(jcId, text, 'Comment');
+}
+
+// ════════════════════════════════════════
+// UPDATE JC STATUS (PATCH to Airtable)
+// ════════════════════════════════════════
+async function updateJCStatus(recId, newStatus) {
+  if (!AT_KEY) { showToast('⚠ Set your Airtable key first'); return; }
+  try {
+    // Write new status to Airtable Job Cards table
+    await atPatch(TABLES.JC, recId, {
+      'Status': newStatus
+    });
+    // Also log to activity log
+    await atCreate(TABLES.ACTIVITY, {
+      'Update': `Status updated to: ${newStatus}`,
+      'Job Card [PRIMARY LINK]': [recId],
+    });
+    // Update local data so UI reflects change immediately
+    const rec = jcData.find(r => r.id === recId);
+    if (rec) {
+      rec.fields[F.JC_STATUS] = newStatus;
+    }
+    showToast(`✓ Status → ${newStatus} saved to Airtable`);
+    // Refresh detail view
+    openDetail(recId);
+  } catch(e) {
+    showToast('✕ Update failed: ' + e.message);
+    console.error('updateJCStatus error:', e);
+  }
+}
+
+async function updateJCProgress(recId, progress) {
+  if (!AT_KEY) { showToast('⚠ Set your Airtable key first'); return; }
+  try {
+    await atPatch(TABLES.JC, recId, {
+      'Progress %': parseInt(progress)
+    });
+    const rec = jcData.find(r => r.id === recId);
+    if (rec) {
+      rec.fields[F.JC_PROGRESS] = parseInt(progress);
+    }
+    showToast(`✓ Progress → ${progress}% saved`);
+    openDetail(recId);
+  } catch(e) {
+    showToast('✕ Progress update failed: ' + e.message);
+  }
+}
+
+// ── DOCUMENTS ──────────────────────────────────────────────
+function renderDocuments(jcRecId) {
+  const el = document.getElementById('doc-list');
+  if (!el) return;
+  // Source 1: Documents table records linked to this JC — only those with File attachments
+  const docRecs = (docsData[jcRecId] || []).filter(r => {
+    const f = r.fields?.['File'];
+    // Must have at least one attachment with a real URL
+    if (!f || !Array.isArray(f) || f.length === 0) return false;
+    return f.some(att => att && (att.url || att.id));
+  });
+  // Source 2: Direct attachments on JC 'Documents' field
+  // Collect filenames already shown via docRecs to avoid duplicates
+  const shownFilenames = new Set(
+    docRecs.flatMap(r => (r.fields?.['File'] || []).map(a => a.filename))
+  );
+  const jcRec  = jcData.find(r => r.id === jcRecId);
+  const jcAtts = (jcRec?.fields?.['Documents'] || [])
+    .filter(att => !shownFilenames.has(att.filename))
+    .map(att => ({
+      _isDirectAtt: true,
+      fields: { 'Document Name': att.filename, 'Document Type': '', 'File': [att] }
+    }));
+  const records = [...docRecs, ...jcAtts];
+  if (!records.length) {
+    el.innerHTML = '<div style="font-family:var(--mono);font-size:10px;color:var(--text-3);">No documents attached</div>';
+    return;
+  }
+  try {
+    const rows = [];
+    for (const rec of records) {
+      const f     = rec.fields || {};
+      const name  = f['Document Name'] || f['Name'] || 'Document';
+      const type  = f['Document Type'] || '';
+      const files = Array.isArray(f['File']) ? f['File'] : (f['File'] ? [f['File']] : []);
+      if (files.length === 0) continue; // skip empty records entirely
+      for (const att of files) {
+          const fname = att.filename || att.name || name || 'document';
+          const url   = att.url || '';
+          const size  = att.size ? (att.size > 1048576 ? (att.size/1048576).toFixed(1)+'MB' : (att.size/1024).toFixed(0)+'KB') : '';
+          const ext   = (fname || '').split('.').pop().toUpperCase();
+          const icon  = ['PDF'].includes(ext) ? '📕' : ['JPG','JPEG','PNG','WEBP'].includes(ext) ? '🖼️' : ['XLS','XLSX'].includes(ext) ? '📊' : ['DOC','DOCX'].includes(ext) ? '📝' : '📄';
+          const thumb = att.thumbnails?.small?.url || '';
+          rows.push(`<div class="doc-item">
+            ${thumb ? `<img src="${thumb}" style="width:32px;height:32px;object-fit:cover;border-radius:4px;flex-shrink:0;">` : ''}
+            <div style="flex:1;min-width:0;">
+              <div class="doc-name" title="${fname}">${icon} ${fname}</div>
+              ${type ? `<div style="font-family:var(--mono);font-size:9px;color:var(--text-3);">${type}</div>` : ''}
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
+              ${size ? `<div class="doc-size">${size}</div>` : ''}
+              ${url ? `<a class="doc-view" href="${url}" target="_blank" rel="noopener">View</a>` : ''}
+            </div>
+          </div>`);
+      }
+    }
+    el.innerHTML = rows.join('') || '<div style="font-family:var(--mono);font-size:10px;color:var(--text-3);">No documents attached</div>';
+  } catch(e) {
+    el.innerHTML = `<div style="font-family:var(--mono);font-size:10px;color:var(--red);">Error: ${e.message}</div>`;
+  }
+}
+
+async function handleDocDrop(event, recId) {
+  event.preventDefault();
+  document.getElementById('doc-upload-area').classList.remove('dragover');
+  const files = Array.from(event.dataTransfer.files);
+  if (files.length) await uploadDocuments(files, recId);
+}
+
+async function handleDocUpload(event, recId) {
+  const files = Array.from(event.target.files);
+  if (files.length) await uploadDocuments(files, recId);
+  event.target.value = '';
+}
+
+// Pending upload state
+let _pendingFiles = null;
+let _pendingJcId  = null;
+
+async function uploadDocuments(files, recId) {
+  // Show modal to collect Document Name + Type before uploading
+  _pendingFiles = files;
+  _pendingJcId  = recId;
+  // Pre-fill name from first filename
+  document.getElementById('doc-modal-name').value = files[0]?.name.replace(/\.[^.]+$/, '') || '';
+  document.getElementById('doc-modal-type').value = '';
+  // Show file list
+  document.getElementById('doc-modal-files').innerHTML =
+    files.map(f => `<div class="doc-modal-file">📄 ${f.name} (${f.size > 1048576 ? (f.size/1048576).toFixed(1)+'MB' : (f.size/1024).toFixed(0)+'KB'})</div>`).join('');
+  document.getElementById('doc-modal').style.display = 'flex';
+  setTimeout(() => document.getElementById('doc-modal-name').focus(), 100);
+}
+
+async function refreshDocsData(jcRecId) {
+  const fresh = await atFetchAll(TABLES.DOCS, []);
+  docsData = {};
+  for (const doc of (fresh.records || [])) {
+    const links = doc.fields['Job Card [PRIMARY LINK]'] || doc.fields['Job Card'] || [];
+    for (const lnk of links) {
+      const id = typeof lnk === 'string' ? lnk : lnk?.id;
+      if (id) { if (!docsData[id]) docsData[id] = []; docsData[id].push(doc); }
+    }
+  }
+}
+
+// Delete all Documents table records for a JC that have no File attachment
+async function cleanupOrphanDocs(jcRecId) {
+  try {
+    const all = await atFetchAll(TABLES.DOCS, []);
+    const orphans = (all.records || []).filter(r => {
+      // Check it links to this JC
+      const links = r.fields['Job Card [PRIMARY LINK]'] || r.fields['Job Card'] || [];
+      const jcIds = links.map(l => typeof l === 'string' ? l : l?.id);
+      if (!jcIds.includes(jcRecId)) return false;
+      // Check it has no file
+      const f = r.fields['File'];
+      return !f || !Array.isArray(f) || f.length === 0 || !f.some(a => a?.url || a?.id);
+    });
+    for (const r of orphans) {
+      await fetch(`${AT_URL}/${AT_BASE}/${TABLES.DOCS}/${r.id}`,
+        { method: 'DELETE', headers: atHeaders() });
+    }
+    if (orphans.length) console.log(`[CLEANUP] Deleted ${orphans.length} orphan doc record(s)`);
+    return orphans.length;
+  } catch(e) { console.warn('[CLEANUP] failed:', e.message); return 0; }
+}
+
+function closeDocModal() {
+  document.getElementById('doc-modal').style.display = 'none';
+  _pendingFiles = null;
+  _pendingJcId  = null;
+}
+
+// Cache File field ID for Documents table (fetched once from schema)
+let _docsFileFieldId = null;
+async function getDocsFileFieldId() {
+  if (_docsFileFieldId) return _docsFileFieldId;
+  const res  = await fetch(`https://api.airtable.com/v0/meta/bases/${AT_BASE}/tables`,
+    { headers: { 'Authorization': `Bearer ${AT_KEY}` } });
+  const data = await res.json();
+  const tbl  = (data.tables || []).find(t => t.id === TABLES.DOCS);
+  const fld  = tbl?.fields?.find(f => f.type === 'multipleAttachments');
+  _docsFileFieldId = fld?.id || null;
+  return _docsFileFieldId;
+}
+
+async function submitDocUpload() {
+  const docName = document.getElementById('doc-modal-name').value.trim();
+  const docType = document.getElementById('doc-modal-type').value;
+  if (!docName) {
+    document.getElementById('doc-modal-name').style.borderColor = 'var(--red)';
+    return;
+  }
+  const files = _pendingFiles;
+  const recId = _pendingJcId;
+  const btn   = document.getElementById('doc-modal-submit');
+  btn.textContent = '⏳ Uploading…';
+  btn.disabled = true;
+  try {
+    // Get File field ID from schema (needed for Content API upload)
+    const fieldId = await getDocsFileFieldId();
+    if (!fieldId) throw new Error('Could not find File field ID — check PAT has schema:read scope');
+    for (const file of files) {
+      // Step 1: Create the record (metadata only, no file yet)
+      btn.textContent = '⏳ Creating record…';
+      const docRec = await atCreate(TABLES.DOCS, {
+        'Document Name': docName,
+        ...(docType ? { 'Document Type': docType } : {}),
+        'Job Card': [recId],
+      });
+      if (!docRec?.id) throw new Error('Failed to create document record');
+      // Step 2: Upload via Vercel proxy (avoids CORS on content.airtable.com)
+      btn.textContent = '⏳ Uploading file…';
+      const form = new FormData();
+      form.append('file', file);
+      const proxyUrl = `/api/upload?baseId=${AT_BASE}&recordId=${docRec.id}&fieldId=${fieldId}`;
+      const upRes = await fetch(proxyUrl, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${AT_KEY}` },
+        body: form
+      });
+      if (!upRes.ok) {
+        const errText = await upRes.text().catch(() => '');
+        console.error('[UPLOAD 400] full response:', errText);
+        // Delete the empty record so no orphans
+        await fetch(`${AT_URL}/${AT_BASE}/${TABLES.DOCS}/${docRec.id}`,
+          { method: 'DELETE', headers: atHeaders() }).catch(() => {});
+        let errMsg = `File upload failed (${upRes.status})`;
+        try { errMsg = JSON.parse(errText)?.error?.message || errMsg; } catch(e) {}
+        throw new Error(errMsg);
+      }
+    }
+    await refreshDocsData(recId);
+    // Also reload the JC record so Documents attachment field is fresh
+    const updatedJC = await atGet(`${AT_URL}/${AT_BASE}/${TABLES.JC}/${recId}`);
+    const cached = jcData.find(r => r.id === recId);
+    if (cached && updatedJC.fields) cached.fields = updatedJC.fields;
+    renderDocuments(recId);
+    closeDocModal();
+    showToast(`✓ ${files.length} file(s) uploaded`);
+  } catch(e) {
+    console.error('Upload error:', e);
+    showToast('Upload failed: ' + e.message, true);
+  } finally {
+    btn.textContent = 'Upload';
+    btn.disabled = false;
+  }
+}
+
+async function updateJCCompletedDate(recId, newDate) {
+  if (!newDate) return;
+  try {
+    await atPatch(TABLES.JC, recId, { 'Completed Project': newDate });
+    const rec = jcData.find(r => r.id === recId);
+    if (rec) rec.fields[F.JC_COMPDATE] = newDate;
+    showToast('Completed date saved');
+  } catch(e) { showToast('Save failed: ' + e.message, true); }
+}
+
+async function updateJCDue(recId, newDate) {
+  if (!AT_KEY || !newDate) return;
+  try {
+    await atPatch(TABLES.JC, recId, { 'Due Date': newDate });
+    const rec = jcData.find(r => r.id === recId);
+    if (rec) rec.fields[F.JC_DUE] = newDate;
+    showToast(`✓ Due date → ${newDate} saved`);
+  } catch(e) {
+    showToast('✕ Due date update failed: ' + e.message);
+  }
+}
+
+// ════════════════════════════════════════
+// NEW TICKET FORM
+// ════════════════════════════════════════
+function populateJCDropdown() {
+  const sel = document.getElementById('f-jc');
+  sel.innerHTML = '<option value="">— Select Job Card (O&M) —</option>';
+  // Sort by JC ref
+  const sorted = [...jcData].sort((a,b) => {
+    const ra = a.fields[F.JC_REF] || '';
+    const rb = b.fields[F.JC_REF] || '';
+    return rb.localeCompare(ra);
+  });
+  sorted.forEach(r => {
+    const ref    = fv(rf(r.fields, F.JC_REF, 'JC Reference'))    || r.id;
+    const title  = fv(rf(r.fields, F.JC_TITLE, 'Title'))  || fv(r.fields['Title']) || '';
+    const site   = fv(rf(r.fields, F.JC_SITE, 'Site / Address'))   || '';
+    const status = fv(r.fields[F.JC_STATUS]) || '';
+    const opt = document.createElement('option');
+    opt.value = r.id;
+    const clientRawD = rf(r.fields, F.JC_CLIENT, 'Client');
+    const clientName = Array.isArray(clientRawD) && clientRawD[0]?.name
+      ? clientRawD[0].name : (fv(clientRawD) || '');
+    opt.dataset.ref    = ref;
+    opt.dataset.title  = title;
+    opt.dataset.site   = site.split('\n')[0];
+    opt.dataset.client = clientName;
+    opt.dataset.status = status;
+    opt.textContent = `${ref}${title ? ' — '+title.substring(0,40) : ''}`;
+    sel.appendChild(opt);
+  });
+}
+
+let selectedJCId = '';  // track selected JC record ID
+
+function onJCSelect(sel) {
+  const opt = sel.options[sel.selectedIndex];
+  const preview = document.getElementById('jc-preview');
+  if (opt && opt.value) {
+    selectedJCId = opt.value;
+    preview.style.display = 'block';
+    preview.innerHTML = `
+      <strong style="color:var(--amber)">${opt.dataset.ref || opt.value}</strong><br>
+      <span style="color:var(--text)">${opt.dataset.title || ''}</span><br>
+      🏢 <span style="color:var(--text-2)">${opt.dataset.client || opt.dataset.site || '—'}</span><br>
+      Status: <span style="color:var(--amber)">${opt.dataset.status || '—'}</span>`;
+  } else {
+    selectedJCId = '';
+    preview.style.display = 'none';
+  }
+}
+
+function openNewForJC(recId, ref) {
+  closeDetail();
+  goView('new');
+  const sel = document.getElementById('f-jc');
+  if (sel) { sel.value = recId; onJCSelect(sel); }
+}
+
+async function submitTicket() {
+  const cat  = document.getElementById('f-cat').value;
+  const subj = document.getElementById('f-subj').value.trim();
+  const jcId = selectedJCId || document.getElementById('f-jc').value;
+  if (!cat || !subj) { showNewStatus('err', '⚠ Category and Subject are required'); return; }
+  if (!jcId)        { showNewStatus('err', '⚠ Link to a Job Card is required'); return; }
+
+  const btn = document.getElementById('submitBtn');
+  const txt = document.getElementById('submitTxt');
+  btn.disabled = true;
+  txt.innerHTML = '<span class="spin"></span> Submitting to Airtable…';
+
+  const rep   = document.getElementById('f-rep').value.trim();
+  const asset = document.getElementById('f-asset').value.trim();
+  const err   = document.getElementById('f-err').value.trim();
+  const desc  = document.getElementById('f-desc').value.trim();
+
+  const noteText = `[${cat}] [${selectedPri}] ${subj}` +
+    (desc   ? `\n\nDescription: ${desc}`         : '') +
+    (asset  ? `\nAsset / Inverter: ${asset}`      : '') +
+    (err    ? `\nError Code: ${err}`              : '') +
+    (rep    ? `\nReported by: ${rep}`             : '') +
+    `\n\nLogged via TAGEX O&M Ticket System.`;
+
+  try {
+    await atCreate(TABLES.ACTIVITY, {
+      'Update': noteText,
+      'Job Card [PRIMARY LINK]': [jcId],
+
+    });
+    showNewStatus('ok', '✓ Ticket logged to Airtable Activity Log successfully!');
+    // Reset form
+    ['f-cat','f-jc'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
+    ['f-subj','f-desc','f-rep','f-asset','f-err'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
+    document.getElementById('jc-preview').style.display = 'none';
+    document.querySelectorAll('.pri-opt').forEach(o => o.classList.remove('sel'));
+    document.querySelector('.pri-opt.high').classList.add('sel');
+    selectedPri = 'High';
+    setTimeout(() => goView('tickets'), 1600);
+  } catch(e) {
+    showNewStatus('err', '✕ Failed: ' + e.message);
+  }
+  btn.disabled = false;
+  txt.textContent = '📤 Submit Ticket to Airtable';
+}
+
+function showNewStatus(type, msg) {
+  const el = document.getElementById('newStatus');
+  el.innerHTML = `<div class="${type==='err'?'err-box':'ok-box'}">${msg}</div>`;
+}
+
+// ════════════════════════════════════════
+// CLIENTS / PEOPLE
+// ════════════════════════════════════════
+// ════════════════════════════════════════
+// TRIAGE VIEW — priority buckets
+// ════════════════════════════════════════
+function triageScore(rec) {
+  const f = rec.fields;
+  const status = fv(f[F.JC_STATUS]);
+  const pri    = fv(f[F.JC_PRIORITY]);
+  const over   = isOverdue(rec);
+  const days   = f[F.JC_DAYS_OVR] || 0;
+  // Exclude only truly closed/cancelled cards
+  const closed = ['Completed','Closed','Cancelled'].includes(status);
+  if (closed) return -1;
+  let score = 1; // base score ensures ALL open cards appear in triage
+  if (pri === 'Critical') score += 100;
+  else if (pri === 'High') score += 50;
+  else if (pri === 'Medium') score += 20;
+  if (over) score += Math.min(Math.abs(days) * 2, 60);
+  if (status === 'In Progress' || status === 'Active') score += 10;
+  if (status === 'New') score += 5;
+  return score;
+}
+
+function triageCard(rec) {
+  const f = rec.fields;
+  const ref    = fv(f[F.JC_REF]) || '—';
+  const title  = fv(f[F.JC_TITLE]) || 'Untitled';
+  const status = fv(f[F.JC_STATUS]) || '—';
+  const pri    = fv(f[F.JC_PRIORITY]) || 'Normal';
+  const over   = isOverdue(rec);
+  const days   = f[F.JC_DAYS_OVR];
+  const clientRawArr = f[F.JC_CLIENT] || f[F.JC_SITE];
+  const client = resolveLinkedName(Array.isArray(clientRawArr) ? clientRawArr : (clientRawArr ? [clientRawArr] : []));
+  const respRaw = f[F.JC_RESP];
+  const resp = respRaw ? (respRaw.name || fv(respRaw)) : 'Unassigned';
+  const priClass = pri === 'Critical' ? 'u-critical' : pri === 'High' ? 'u-high' : pri === 'Medium' ? 'u-medium' : 'u-normal';
+  return `<div class="tcard" onclick="openDetail('${rec.id}')">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:5px;">
+      <div>
+        <div class="tcard-ref">${ref}</div>
+        ${client !== '—' ? `<div class="tcard-client">🏢 ${client}</div>` : ''}
+      </div>
+      <div style="display:flex;gap:4px;align-items:center;">
+        <span class="urgency-pill ${priClass}">${pri}</span>
+        ${over ? `<span style="font-family:var(--mono);font-size:9px;color:var(--red);font-weight:700">⚠ ${days != null ? Math.round(days)+'d' : 'OVERDUE'}</span>` : ''}
+      </div>
+    </div>
+    <div class="tcard-title">${title}</div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px;">
+      <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+        <span class="status-badge ${getStatusClass(status)}">${status}</span>
+        <span style="font-family:var(--mono);font-size:10px;color:var(--text-3)">🏢 ${client}</span>
+      </div>
+      <div class="tcard-tech">
+        <div class="av">${initials(resp)}</div>
+        <span style="font-family:var(--mono);font-size:10px;color:var(--text-3)">${resp}</span>
+      </div>
+    </div>
+  </div>`;
+}
+
+function setTriageFilter(el, val) {
+  document.querySelectorAll('#view-triage .fchip').forEach(c => c.classList.remove('on'));
+  el.classList.add('on');
+  triagePriFilter = val;
+  renderTriage();
+}
+
+function filterTriage(q) {
+  triageSearch = q;
+  renderTriage();
+}
+
+function triageMatchesFilter(rec) {
+  const f = rec.fields;
+  const siteArr = f[F.JC_CLIENT] || f[F.JC_SITE] || [];
+  const site = resolveLinkedName(Array.isArray(siteArr) ? siteArr : [siteArr]);
+  if (triageSearch) {
+    const ql = triageSearch.toLowerCase();
+    const ok = fv(f[F.JC_REF]).toLowerCase().includes(ql) ||
+               fv(f[F.JC_TITLE]).toLowerCase().includes(ql) ||
+               site.toLowerCase().includes(ql);
+    if (!ok) return false;
+  }
+  if (triagePriFilter === 'ALL') return true;
+  if (triagePriFilter === 'overdue') return isOverdue(rec);
+  if (triagePriFilter === 'In Progress') return fv(f[F.JC_STATUS]) === 'In Progress';
+  return fv(f[F.JC_PRIORITY]) === triagePriFilter;
+}
+
+function renderTriage() {
+  const el = document.getElementById('triage-content');
+  if (!jcData.length) { el.innerHTML = '<div class="empty"><div class="empty-icon">📋</div>No data loaded yet</div>'; return; }
+
+  const open = jcData.filter(r => triageScore(r) >= 0 && triageMatchesFilter(r)).sort((a,b) => triageScore(b) - triageScore(a));
+
+  const critical = open.filter(r => {
+    const pri = fv(r.fields[F.JC_PRIORITY]);
+    const days = r.fields[F.JC_DAYS_OVR] || 0;
+    return pri === 'Critical' || (isOverdue(r) && Math.abs(days) > 7);
+  });
+
+  const urgent = open.filter(r => {
+    const pri = fv(r.fields[F.JC_PRIORITY]);
+    return !critical.includes(r) && (isOverdue(r) || pri === 'High');
+  });
+
+  const inprog = open.filter(r => {
+    const s = fv(r.fields[F.JC_STATUS]);
+    return !critical.includes(r) && !urgent.includes(r) && s === 'In Progress';
+  });
+
+  // Pending = everything open that isn't critical/urgent/in-progress
+  // No allowlist — catches all statuses including custom ones in your Airtable
+  const pending = open.filter(r => {
+    return !critical.includes(r) && !urgent.includes(r) && !inprog.includes(r);
+  });
+
+  // Build status breakdown for debug header
+  const statusCounts = {};
+  open.forEach(r => {
+    const s = fv(r.fields[F.JC_STATUS]) || '(no status)';
+    statusCounts[s] = (statusCounts[s]||0) + 1;
+  });
+  const statusSummary = Object.entries(statusCounts).map(([s,n])=>`${s}:${n}`).join(' · ');
+
+  el.innerHTML = `
+    <div style="font-family:var(--mono);font-size:10px;color:var(--text-3);margin-bottom:14px;padding:8px 10px;background:var(--surface);border-radius:var(--rs);border:1px solid var(--border);">
+      ${open.length} open of ${jcData.length} total · sorted by urgency · tap to view &amp; act
+      ${statusSummary ? `<div style="margin-top:4px;color:var(--text-3);font-size:9px;">${statusSummary}</div>` : ''}
+    </div>
+    <div class="bucket">
+      <div class="bucket-hdr bucket-crit">🔴 Critical &amp; Long Overdue <span style="margin-left:auto;background:var(--red);color:#fff;border-radius:20px;padding:1px 8px;font-size:10px;">${critical.length}</span></div>
+      ${critical.length ? critical.map(r=>triageCard(r)).join('') : '<div class="triage-empty">✓ No critical issues</div>'}
+    </div>
+    <div class="bucket">
+      <div class="bucket-hdr bucket-warn">🟡 Overdue &amp; High Priority <span style="margin-left:auto;background:var(--amber);color:#0a0a0b;border-radius:20px;padding:1px 8px;font-size:10px;">${urgent.length}</span></div>
+      ${urgent.length ? urgent.map(r=>triageCard(r)).join('') : '<div class="triage-empty">✓ No urgent items</div>'}
+    </div>
+    <div class="bucket">
+      <div class="bucket-hdr bucket-info">🔵 In Progress — Active Work <span style="margin-left:auto;background:var(--blue);color:#fff;border-radius:20px;padding:1px 8px;font-size:10px;">${inprog.length}</span></div>
+      ${inprog.length ? inprog.map(r=>triageCard(r)).join('') : '<div class="triage-empty">No active work</div>'}
+    </div>
+    <div class="bucket">
+      <div class="bucket-hdr bucket-ok">⚪ Pending Action <span style="margin-left:auto;background:var(--green);color:#fff;border-radius:20px;padding:1px 8px;font-size:10px;">${pending.length}</span></div>
+      ${pending.length ? pending.map(r=>triageCard(r)).join('') : '<div class="triage-empty">Nothing pending</div>'}
+    </div>`;
+}
+
+
+function renderClientsTab(tab) {
+  const el = document.getElementById('clientsContent');
+  if (tab === 'clients') {
+    // Build a map: clientRecId → list of JC refs linked to them
+    const jcByClient = {};
+    jcData.forEach(jc => {
+      const arr = jc.fields[F.JC_CLIENT] || [];
+      arr.forEach(raw => {
+        const id = typeof raw === 'string' ? raw : raw?.id;
+        if (id) {
+          if (!jcByClient[id]) jcByClient[id] = [];
+          jcByClient[id].push(fv(jc.fields[F.JC_REF]) || jc.id);
+        }
+      });
+    });
+    el.innerHTML = clientData.length
+      ? clientData.map(r => {
+          const f = r.fields;
+          // fetchClients() uses no returnFieldsByFieldId so fields keyed by name
+          const name    = f['Client Name'] || f['Name'] || '—';
+          const contact = f['Contact Person'] || f[F.CL_CONTACT] || '';
+          const email   = f['Email'] || f[F.CL_EMAIL] || '';
+          const site    = f['Sites'] || f['Site / Address'] || f[F.CL_SITES] || '';
+          const jcRefs  = jcByClient[r.id] || [];
+          return `<div class="client-card">
+            <div class="client-name">${name}</div>
+            <div class="client-meta">
+              ${contact ? '👤 '+contact : ''}${email ? (contact?' · ':'')+'📧 '+email : ''}
+            </div>
+            ${site ? `<div style="font-family:var(--mono);font-size:10px;color:var(--text-3);margin-top:4px;">📍 ${String(site).split('\n')[0]}</div>` : ''}
+            ${jcRefs.length ? `<div style="font-family:var(--mono);font-size:9px;color:var(--amber);margin-top:6px;">📋 ${jcRefs.length} JC${jcRefs.length>1?'s':''}: ${jcRefs.slice(0,3).join(' · ')}${jcRefs.length>3?' +more':''}</div>` : ''}
+          </div>`;
+        }).join('')
+      : '<div class="empty"><div class="empty-icon">👤</div>No clients loaded — set your Airtable key</div>';
+  } else if (tab === 'people') {
+    el.innerHTML = peopleData.length
+      ? peopleData.map(r => {
+          const f = r.fields;
+          const name  = f['Name'] || f['Full Name'] || '—';
+          const role  = f['Role'] || f[F.PE_ROLE] || '—';
+          const email = f['Email'] || f[F.PE_EMAIL] || '';
+          const phone = f['Phone'] || f[F.PE_PHONE] || '';
+          return `<div class="client-card">
+            <div style="display:flex;align-items:center;gap:10px;">
+              <div class="av" style="width:32px;height:32px;font-size:12px;">${initials(name)}</div>
+              <div>
+                <div class="client-name">${name}</div>
+                <div class="client-meta">${role}${email ? ' · '+email : ''}${phone ? ' · '+phone : ''}</div>
+              </div>
+            </div>
+          </div>`;
+        }).join('')
+      : '<div class="empty"><div class="empty-icon">👥</div>No people loaded</div>';
+  } else if (tab === 'activity') {
+    el.innerHTML = '<div class="loading-row"><span class="spin"></span> Loading recent activity…</div>';
+    loadRecentActivity();
+  }
+}
+
+async function loadRecentActivity() {
+  const el = document.getElementById('clientsContent');
+  if (!AT_KEY) { el.innerHTML = '<div class="err-box">Set API key to load activity log</div>'; return; }
+  try {
+    const fields = [F.AL_UPDATE, F.AL_ACTTYPE, F.AL_TS].map(f => `fields[]=${encodeURIComponent(f)}`).join('&');
+    const sort   = `sort[0][field]=${F.AL_TS}&sort[0][direction]=desc&maxRecords=50`;
+    const d      = await atGet(`${AT_URL}/${AT_BASE}/${TABLES.ACTIVITY}?${fields}&${sort}`);
+    const data   = d.records || [];
+    el.innerHTML = data.length
+      ? `<div class="tl">${data.map((a,i) => {
+          const af     = a.fields;
+          const tsRaw2 = a.createdTime || af['Timestamp'] || af['Created'];
+          const ts     = tsRaw2 ? new Date(tsRaw2).toLocaleString('en-ZA',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}) : '—';
+          const type   = af['Action Type'] || af['Type'] || 'Log';
+          const update = (af['Update / Notes'] || af['Update'] || af['Notes'] || '').substring(0,200).replace(/</g,'&lt;').replace(/>/g,'&gt;');
+          const jcIds  = af['Job Card'] || [];
+          const jcId   = typeof jcIds[0] === 'string' ? jcIds[0] : jcIds[0]?.id;
+          const jcRec  = jcId ? jcData.find(j => j.id === jcId) : null;
+          const jcRef  = jcRec ? (fv(jcRec.fields[F.JC_REF]) || '—') : '—';
+          const jcClient = jcRec ? (() => {
+            const arr = jcRec.fields[F.JC_CLIENT] || [];
+            return resolveLinkedName(Array.isArray(arr) ? arr : [arr]);
+          })() : '—';
+          return `<div class="tl-item">
+            <div class="tl-dot ${i===0?'g':''}"></div>
+            <div class="tl-time">${ts} · <span class="tl-who">${type}</span></div>
+            ${jcRef !== '—' ? `<div style="font-family:var(--mono);font-size:10px;color:var(--amber);margin:2px 0;">📋 ${jcRef}${jcClient !== '—' ? ' · 🏢 '+jcClient : ''}</div>` : ''}
+            <div class="tl-text">${update}</div>
+          </div>`;
+        }).join('')}</div>`
+      : '<div class="empty">No activity log entries</div>';
+  } catch(e) {
+    el.innerHTML = `<div class="err-box">Failed: ${e.message}</div>`;
+  }
+}
+
+function setCliTab(el, tab) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('on'));
+  el.classList.add('on');
+  renderClientsTab(tab);
+}
+
+// ════════════════════════════════════════
+// NAVIGATION
+// ════════════════════════════════════════
+function goView(name) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.bnav-btn').forEach(b => b.classList.remove('on'));
+  document.getElementById('view-'+name).classList.add('active');
+  const bn = document.getElementById('bnav-'+name);
+  if (bn) bn.classList.add('on');
+  prevView = currentView;
+  currentView = name;
+  if (name === 'dashboard') renderDashboard();
+  if (name === 'tickets')   renderJCList(currentJCFilter === 'ALL' ? jcData : jcData.filter(r => r.fields[F.JC_STATUS] === currentJCFilter));
+  if (name === 'triage')    renderTriage();
+  if (name === 'sites')     renderClientsTab('clients');
+}
+
+// ════════════════════════════════════════
+// ════════════════════════════════════════
+// PAT MANAGEMENT
+// ════════════════════════════════════════
+function savePat(val) {
+  AT_KEY = val.trim();
+  localStorage.setItem('tagex_om_key', AT_KEY);
+}
+
+function showPatModal() { document.getElementById('patModal').classList.add('open'); }
+function closePatModal() { document.getElementById('patModal').classList.remove('open'); }
+
+function savePatFromModal() {
+  const val = document.getElementById('modal-pat').value.trim();
+  if (!val) { showToast('⚠ Paste your PAT first'); return; }
+  AT_KEY = val;
+  localStorage.setItem('tagex_om_key', AT_KEY);
+  document.getElementById('patBtn').textContent = 'LOADING…';
+  document.getElementById('patBtn').classList.remove('ok');
+  closePatModal();
+  loadAll();
+}
+
+async function testAndLoad() {
+  const val = document.getElementById('s-pat') ? document.getElementById('s-pat').value.trim() : '';
+  if (val) { AT_KEY = val; localStorage.setItem('tagex_om_key', AT_KEY); }
+  const statusEl = document.getElementById('s-status');
+  if (statusEl) statusEl.textContent = 'Connecting…';
+  await loadAll();
+  if (statusEl) statusEl.textContent = jcData.length
+    ? `✓ Connected — ${jcData.length} job cards, ${clientData.length} clients loaded`
+    : '✕ Connection failed — check token and permissions';
+}
+
+// ════════════════════════════════════════
+// PRIORITY SELECTOR
+// ════════════════════════════════════════
+function selPri(el, val) {
+  document.querySelectorAll('.pri-opt').forEach(o => o.classList.remove('sel'));
+  el.classList.add('sel');
+  selectedPri = val;
+}
+
+// ════════════════════════════════════════
+// EMERGENCY
+// ════════════════════════════════════════
+function quickEmergency() {
+  goView('new');
+  document.getElementById('f-cat').value = 'Emergency Callout';
+  document.querySelectorAll('.pri-opt').forEach(o => o.classList.remove('sel'));
+  document.querySelector('.pri-opt.urgent').classList.add('sel');
+  selectedPri = 'Urgent';
+  showToast('⚡ Emergency Callout — Urgent priority set');
+}
+
+// ════════════════════════════════════════
+// TOAST
+// ════════════════════════════════════════
+let toastTimer;
+function showToast(msg) {
+  let t = document.getElementById('toast');
+  if (!t) {
+    t = document.createElement('div'); t.id = 'toast';
+    t.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:var(--card);border:1px solid var(--border-hi);border-radius:20px;padding:8px 16px;font-family:var(--mono);font-size:11px;color:var(--text);z-index:1000;transition:opacity .3s;white-space:nowrap;max-width:90vw;overflow:hidden;text-overflow:ellipsis;';
+    document.body.appendChild(t);
+  }
+  t.textContent = msg; t.style.opacity = '1';
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.style.opacity = '0', 2400);
+}
+
+// ════════════════════════════════════════
+// INIT — auto-load via Anthropic proxy
+// ════════════════════════════════════════
+// ════════════════════════════════════════
+// INIT
+// ════════════════════════════════════════
+// Detect file:// protocol — fetch() is blocked by Chrome in this context
+// Auto-refresh every 60s to stay in sync
+let autoRefreshTimer;
+function startAutoRefresh() {
+  clearInterval(autoRefreshTimer);
+  autoRefreshTimer = setInterval(() => {
+    if (AT_KEY && currentView !== 'detail') loadAll();
+  }, 60000);
+}
+
+const IS_FILE_PROTOCOL = location.protocol === 'file:';
+
+if (IS_FILE_PROTOCOL) {
+  setSyncStatus('err');
+  document.getElementById('dash-at-status').innerHTML = `
+    <div class="err-box" style="line-height:1.9">
+      ⚠ <strong>Cannot connect from file:// — Chrome blocks external requests from local files.</strong><br>
+      <strong style="color:var(--amber)">To fix — use one of these options:</strong><br>
+      1. Deploy to <strong>Netlify</strong> (same as the BOM app) — drag &amp; drop this file at netlify.com/drop<br>
+      2. Run locally with a dev server: <code style="color:var(--amber)">npx serve .</code> then open http://localhost:3000<br>
+      3. Use Chrome with flag: <code style="color:var(--amber)">--allow-file-access-from-files</code>
+    </div>`;
+  document.getElementById('patBtn').textContent = 'HOST NEEDED';
+} else if (AT_KEY) {
+  document.getElementById('patBtn').textContent = 'LOADING…';
+  // Pre-fill settings PAT field if token already in memory
+  const sPatEl = document.getElementById('s-pat');
+  if (sPatEl) sPatEl.value = AT_KEY;
+  loadAll();
+} else {
+  setSyncStatus('nokey');
+  setDashStatus('nokey');
+}
+</script>
+  <!-- DOCUMENT UPLOAD MODAL -->
+  <div class="doc-modal-overlay" id="doc-modal" style="display:none" onclick="if(event.target===this)closeDocModal()">
+    <div class="doc-modal">
+      <div class="doc-modal-title">📎 Upload Document</div>
+      <div id="doc-modal-files"></div>
+      <label>Document Name *</label>
+      <input type="text" id="doc-modal-name" placeholder="e.g. Site photos of roof and DB">
+      <label>Document Type</label>
+      <select id="doc-modal-type">
+        <option value="">— Select type —</option>
+        <option>Site Photos</option>
+        <option>COC</option>
+        <option>Invoice</option>
+        <option>Quotation</option>
+        <option>Compliance Report</option>
+        <option>Installation Report</option>
+        <option>Sign-Off</option>
+        <option>Warranty</option>
+        <option>Other</option>
+      </select>
+      <div class="doc-modal-btns">
+        <button class="btn-cancel" onclick="closeDocModal()">Cancel</button>
+        <button class="btn-primary" id="doc-modal-submit" onclick="submitDocUpload()">Upload</button>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
